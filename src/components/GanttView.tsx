@@ -16,6 +16,7 @@ import { fr } from 'date-fns/locale'
 interface Props {
   tasks: Task[]
   members: TeamMember[]
+  onTaskClick: (task: Task) => void
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -25,7 +26,7 @@ const STATUS_COLORS: Record<string, string> = {
   bloque: '#ef4444',
 }
 
-export function GanttView({ tasks, members }: Props) {
+export function GanttView({ tasks, members, onTaskClick }: Props) {
   const { months, startDate, totalDays } = useMemo(() => {
     const now = new Date()
     const start = startOfMonth(now)
@@ -68,13 +69,15 @@ export function GanttView({ tasks, members }: Props) {
     return { left: `${left}%`, width: `${Math.max(width, 0.8)}%` }
   }
 
-  // Group tasks by assignee
+  // Group tasks by assignee (tasks can appear under multiple assignees)
   const grouped = useMemo(() => {
     const map: Record<string, Task[]> = {}
     members.forEach((m) => { map[m.name] = [] })
     tasks.forEach((t) => {
-      if (!map[t.assignee]) map[t.assignee] = []
-      map[t.assignee].push(t)
+      t.assignees.forEach((assignee) => {
+        if (!map[assignee]) map[assignee] = []
+        map[assignee].push(t)
+      })
     })
     return map
   }, [tasks, members])
@@ -176,12 +179,13 @@ export function GanttView({ tasks, members }: Props) {
                       if (!style) return null
                       return (
                         <div
-                          className="absolute top-1/2 -translate-y-1/2 h-7 rounded-lg text-white text-[11px] font-medium flex items-center px-2.5 truncate cursor-default shadow-sm"
+                          className="absolute top-1/2 -translate-y-1/2 h-7 rounded-lg text-white text-[11px] font-medium flex items-center px-2.5 truncate cursor-pointer shadow-sm hover:shadow-md hover:brightness-110 transition-all"
                           style={{
                             ...style,
                             backgroundColor: STATUS_COLORS[task.status] || '#f8571f',
                           }}
                           title={`${task.title} (${task.startDate} → ${task.dueDate})`}
+                          onClick={() => onTaskClick(task)}
                         >
                           {task.title}
                         </div>
@@ -190,7 +194,7 @@ export function GanttView({ tasks, members }: Props) {
                     {/* Today line */}
                     {todayPct !== null && (
                       <div
-                        className="absolute top-0 bottom-0 w-0.5 bg-[#f8571f] z-10"
+                        className="absolute top-0 bottom-0 w-0.5 bg-[#f8571f] z-10 pointer-events-none"
                         style={{ left: `${todayPct}%` }}
                       />
                     )}

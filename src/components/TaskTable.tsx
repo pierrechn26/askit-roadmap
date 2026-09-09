@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Plus, Trash2, ArrowUpDown } from 'lucide-react'
+import { Plus, Trash2, ArrowUpDown, MessageSquare } from 'lucide-react'
 import type { Task, Priority, TaskStatus, TeamMember } from '@/types'
 import { DEFAULT_CATEGORIES } from '@/data/defaults'
 
@@ -33,17 +33,19 @@ interface Props {
   tasks: Task[]
   onTasksChange: (t: Task[]) => void
   members: TeamMember[]
+  onTaskClick: (task: Task) => void
 }
 
-export function TaskTable({ tasks, onTasksChange, members }: Props) {
+export function TaskTable({ tasks, onTasksChange, members, onTaskClick }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [sortBy, setSortBy] = useState<'dueDate' | 'priority' | 'assignee'>('dueDate')
   const [filterAssignee, setFilterAssignee] = useState<string>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [selectedAssignees, setSelectedAssignees] = useState<string[]>([members[0]?.name || ''])
 
   const [newTask, setNewTask] = useState<Partial<Task>>({
     title: '',
-    assignee: members[0]?.name || '',
+    description: '',
     startDate: new Date().toISOString().slice(0, 10),
     dueDate: '',
     priority: 'moyenne',
@@ -51,30 +53,40 @@ export function TaskTable({ tasks, onTasksChange, members }: Props) {
     category: DEFAULT_CATEGORIES[0],
   })
 
+  function toggleNewAssignee(name: string) {
+    setSelectedAssignees((prev) =>
+      prev.includes(name) ? prev.filter((a) => a !== name) : [...prev, name]
+    )
+  }
+
   function addTask() {
-    if (!newTask.title?.trim() || !newTask.dueDate) return
+    if (!newTask.title?.trim() || !newTask.dueDate || selectedAssignees.length === 0) return
     onTasksChange([
       ...tasks,
       {
         ...newTask,
         id: Date.now().toString(),
         title: newTask.title!.trim(),
+        description: newTask.description || '',
+        assignees: selectedAssignees,
+        activities: [],
       } as Task,
     ])
     setNewTask({
       title: '',
-      assignee: members[0]?.name || '',
+      description: '',
       startDate: new Date().toISOString().slice(0, 10),
       dueDate: '',
       priority: 'moyenne',
       status: 'a_faire',
       category: DEFAULT_CATEGORIES[0],
     })
+    setSelectedAssignees([members[0]?.name || ''])
     setDialogOpen(false)
   }
 
-  function updateTask(id: string, updates: Partial<Task>) {
-    onTasksChange(tasks.map((t) => (t.id === id ? { ...t, ...updates } : t)))
+  function updateTaskStatus(id: string, status: TaskStatus) {
+    onTasksChange(tasks.map((t) => (t.id === id ? { ...t, status } : t)))
   }
 
   function removeTask(id: string) {
@@ -83,14 +95,17 @@ export function TaskTable({ tasks, onTasksChange, members }: Props) {
 
   const priorityOrder: Record<Priority, number> = { haute: 0, moyenne: 1, basse: 2 }
 
+  const memberColorMap: Record<string, string> = {}
+  members.forEach((m) => { memberColorMap[m.name] = m.color })
+
   let filtered = tasks
-    .filter((t) => filterAssignee === 'all' || t.assignee === filterAssignee)
+    .filter((t) => filterAssignee === 'all' || t.assignees.includes(filterAssignee))
     .filter((t) => filterStatus === 'all' || t.status === filterStatus)
 
   filtered = [...filtered].sort((a, b) => {
     if (sortBy === 'dueDate') return a.dueDate.localeCompare(b.dueDate)
     if (sortBy === 'priority') return priorityOrder[a.priority] - priorityOrder[b.priority]
-    return a.assignee.localeCompare(b.assignee)
+    return a.assignees[0]?.localeCompare(b.assignees[0] || '') || 0
   })
 
   return (
@@ -107,12 +122,31 @@ export function TaskTable({ tasks, onTasksChange, members }: Props) {
             <DialogHeader><DialogTitle className="text-[#241f20]">Nouvelle tâche</DialogTitle></DialogHeader>
             <div className="space-y-3 pt-2">
               <Input placeholder="Titre" className="rounded-xl" value={newTask.title} onChange={(e) => setNewTask({ ...newTask, title: e.target.value })} />
-              <Select value={newTask.assignee} onValueChange={(v) => setNewTask({ ...newTask, assignee: v })}>
-                <SelectTrigger className="rounded-xl"><SelectValue placeholder="Assigné à" /></SelectTrigger>
-                <SelectContent>
-                  {members.map((m) => <SelectItem key={m.name} value={m.name}>{m.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+
+              {/* Multi-select assignees */}
+              <div>
+                <label className="text-xs text-[#6c6560] mb-1.5 block">Responsables</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {members.map((m) => {
+                    const selected = selectedAssignees.includes(m.name)
+                    return (
+                      <button
+                        key={m.name}
+                        type="button"
+                        onClick={() => toggleNewAssignee(m.name)}
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs transition-all ${
+                          selected ? 'text-white' : 'bg-[#f5f5f7] text-[#6c6560] hover:bg-[#eee]'
+                        }`}
+                        style={selected ? { backgroundColor: m.color } : undefined}
+                      >
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: selected ? '#fff' : m.color }} />
+                        {m.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-xs text-[#a39c95] mb-1 block">Début</label>
@@ -177,30 +211,40 @@ export function TaskTable({ tasks, onTasksChange, members }: Props) {
           <p className="text-center text-[#a39c95] py-8">Aucune tâche</p>
         )}
         {filtered.map((task) => (
-          <Card key={task.id} className="p-3.5 rounded-2xl border-0 shadow-sm hover:shadow-md transition-shadow">
+          <Card
+            key={task.id}
+            className="p-3.5 rounded-2xl border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => onTaskClick(task)}
+          >
             <div className="flex items-center gap-3 flex-wrap">
               {/* Status select */}
-              <Select value={task.status} onValueChange={(v) => updateTask(task.id, { status: v as TaskStatus })}>
-                <SelectTrigger className={`w-[110px] h-7 text-xs rounded-full border-0 ${STATUS_COLORS[task.status]}`}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(STATUS_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <div onClick={(e) => e.stopPropagation()}>
+                <Select value={task.status} onValueChange={(v) => updateTaskStatus(task.id, v as TaskStatus)}>
+                  <SelectTrigger className={`w-[110px] h-7 text-xs rounded-full border-0 ${STATUS_COLORS[task.status]}`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(STATUS_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
 
               {/* Title */}
               <span className="flex-1 font-medium min-w-[150px] text-[#241f20]">{task.title}</span>
 
-              {/* Assignee */}
-              <Select value={task.assignee} onValueChange={(v) => updateTask(task.id, { assignee: v })}>
-                <SelectTrigger className="w-[120px] h-7 text-xs rounded-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {members.map((m) => <SelectItem key={m.name} value={m.name}>{m.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              {/* Assignee avatars */}
+              <div className="flex -space-x-1.5">
+                {task.assignees.map((name) => (
+                  <div
+                    key={name}
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold border-2 border-white"
+                    style={{ backgroundColor: memberColorMap[name] || '#888' }}
+                    title={name}
+                  >
+                    {name.charAt(0).toUpperCase()}
+                  </div>
+                ))}
+              </div>
 
               {/* Priority badge */}
               <Badge variant="outline" className={`text-xs rounded-full border ${PRIORITY_COLORS[task.priority]}`}>
@@ -215,8 +259,19 @@ export function TaskTable({ tasks, onTasksChange, members }: Props) {
                 {task.startDate} → {task.dueDate}
               </span>
 
+              {/* Activity count */}
+              {task.activities.length > 0 && (
+                <span className="flex items-center gap-0.5 text-xs text-[#a39c95]">
+                  <MessageSquare className="h-3 w-3" />
+                  {task.activities.length}
+                </span>
+              )}
+
               {/* Delete */}
-              <button onClick={() => removeTask(task.id)} className="text-[#a39c95] hover:text-[#ef4444] transition-colors">
+              <button
+                onClick={(e) => { e.stopPropagation(); removeTask(task.id) }}
+                className="text-[#a39c95] hover:text-[#ef4444] transition-colors"
+              >
                 <Trash2 className="h-4 w-4" />
               </button>
             </div>

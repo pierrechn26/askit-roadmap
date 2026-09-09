@@ -20,22 +20,26 @@ export const DEFAULT_TASKS: Task[] = [
   {
     id: '1',
     title: 'Finaliser onboarding Dermeden',
-    assignee: 'Pierre',
+    description: '',
+    assignees: ['Pierre'],
     startDate: '2026-09-09',
     dueDate: '2026-09-15',
     priority: 'haute',
     status: 'en_cours',
     category: 'Ops',
+    activities: [],
   },
   {
     id: '2',
     title: 'Prospection 20 leads / semaine',
-    assignee: 'Pierre',
+    description: '',
+    assignees: ['Pierre'],
     startDate: '2026-09-09',
     dueDate: '2026-12-31',
     priority: 'haute',
     status: 'en_cours',
     category: 'Commercial',
+    activities: [],
   },
 ]
 

@@ -1,22 +1,32 @@
 export type Priority = 'haute' | 'moyenne' | 'basse'
 export type TaskStatus = 'a_faire' | 'en_cours' | 'termine' | 'bloque'
 
+export interface TaskActivity {
+  id: string
+  type: 'note' | 'document' | 'mention' | 'status_change'
+  content: string
+  author: string
+  createdAt: string // ISO datetime
+}
+
 export interface Task {
   id: string
   title: string
-  assignee: string
-  startDate: string // ISO date
-  dueDate: string // ISO date
+  description: string
+  assignees: string[] // multiple assignees
+  startDate: string
+  dueDate: string
   priority: Priority
   status: TaskStatus
   category: string
+  activities: TaskActivity[]
 }
 
 export interface Objective {
   id: string
   title: string
   type: 'mensuel' | 'hebdo'
-  period: string // e.g. "2026-09" or "2026-W37"
+  period: string
   done: boolean
 }
 

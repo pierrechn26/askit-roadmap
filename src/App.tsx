@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ObjectivePanel } from '@/components/ObjectivePanel'
 import { TaskTable } from '@/components/TaskTable'
 import { GanttView } from '@/components/GanttView'
 import { TeamSettings } from '@/components/TeamSettings'
+import { TaskDetailPanel } from '@/components/TaskDetailPanel'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { DEFAULT_MEMBERS, DEFAULT_TASKS, DEFAULT_OBJECTIVES } from '@/data/defaults'
 import { LayoutDashboard, ListTodo, GanttChart, Settings } from 'lucide-react'
@@ -14,13 +16,27 @@ function App() {
   const [objectives, setObjectives] = useLocalStorage<Objective[]>('askit-objectives', DEFAULT_OBJECTIVES)
   const [members, setMembers] = useLocalStorage<TeamMember[]>('askit-members', DEFAULT_MEMBERS)
 
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const [detailOpen, setDetailOpen] = useState(false)
+
+  function handleTaskClick(task: Task) {
+    // Get latest version from state
+    const latest = tasks.find((t) => t.id === task.id) || task
+    setSelectedTask(latest)
+    setDetailOpen(true)
+  }
+
+  function handleTaskUpdate(updated: Task) {
+    setTasks(tasks.map((t) => (t.id === updated.id ? updated : t)))
+    setSelectedTask(updated)
+  }
+
   return (
     <div className="min-h-screen bg-[#fdfcfc]">
       {/* Header with brand gradient */}
       <header className="bg-[#241f20] text-white px-6 py-5">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            {/* Logo */}
             <div className="flex items-baseline">
               <span className="text-xl font-semibold tracking-tight">ask-it</span>
               <span className="text-xl font-light text-white/60">.ai</span>
@@ -38,7 +54,6 @@ function App() {
             </p>
           </div>
         </div>
-        {/* Gradient accent bar */}
         <div className="max-w-6xl mx-auto mt-4">
           <div className="h-0.5 rounded-full bg-gradient-to-r from-[#f8571f] via-[#accce9] to-[#a7abdd]" />
         </div>
@@ -84,11 +99,20 @@ function App() {
           </TabsContent>
 
           <TabsContent value="tasks">
-            <TaskTable tasks={tasks} onTasksChange={setTasks} members={members} />
+            <TaskTable
+              tasks={tasks}
+              onTasksChange={setTasks}
+              members={members}
+              onTaskClick={handleTaskClick}
+            />
           </TabsContent>
 
           <TabsContent value="gantt">
-            <GanttView tasks={tasks} members={members} />
+            <GanttView
+              tasks={tasks}
+              members={members}
+              onTaskClick={handleTaskClick}
+            />
           </TabsContent>
 
           <TabsContent value="team">
@@ -98,6 +122,15 @@ function App() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Task detail panel */}
+      <TaskDetailPanel
+        task={selectedTask}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onTaskUpdate={handleTaskUpdate}
+        members={members}
+      />
     </div>
   )
 }
