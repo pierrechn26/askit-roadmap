@@ -1,0 +1,110 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource/dm-sans/400.css";
+@import "@fontsource/dm-sans/500.css";
+@import "@fontsource/dm-sans/600.css";
+@import "@fontsource/dm-sans/700.css";
+@import "@fontsource/instrument-serif/400.css";
+@import "@fontsource/instrument-serif/400-italic.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-heading: 'DM Sans', sans-serif;
+    --font-sans: 'DM Sans', sans-serif;
+    --font-serif: 'Instrument Serif', serif;
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+
+    /* AskIt brand colors */
+    --color-askit-orange: #f8571f;
+    --color-askit-teal: #a7abdd;
+    --color-askit-blue: #accce9;
+    --color-askit-dark: #241f20;
+}
+
+:root {
+    --background: #fdfcfc;
+    --foreground: #241f20;
+    --card: #ffffff;
+    --card-foreground: #241f20;
+    --popover: #ffffff;
+    --popover-foreground: #241f20;
+    --primary: #f8571f;
+    --primary-foreground: #ffffff;
+    --secondary: #f5f5f7;
+    --secondary-foreground: #241f20;
+    --muted: #f5f5f7;
+    --muted-foreground: #6c6560;
+    --accent: #f5f5f7;
+    --accent-foreground: #241f20;
+    --destructive: #ef4444;
+    --border: rgba(36, 31, 32, 0.10);
+    --input: rgba(36, 31, 32, 0.10);
+    --ring: #f8571f;
+    --chart-1: #f8571f;
+    --chart-2: #a7abdd;
+    --chart-3: #accce9;
+    --chart-4: #6c6560;
+    --chart-5: #241f20;
+    --radius: 0.75rem;
+    --sidebar: #fdfcfc;
+    --sidebar-foreground: #241f20;
+    --sidebar-primary: #f8571f;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #f5f5f7;
+    --sidebar-accent-foreground: #241f20;
+    --sidebar-border: rgba(36, 31, 32, 0.10);
+    --sidebar-ring: #f8571f;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  html {
+    @apply font-sans;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+  }
+}
