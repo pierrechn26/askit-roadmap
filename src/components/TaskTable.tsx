@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Plus, Trash2, ArrowUpDown, MessageSquare, CheckSquare, Square, Paperclip, ChevronRight, Filter, X } from 'lucide-react'
 import type { Task, Priority, TaskStatus, TeamMember, SubTask, Objective } from '@/types'
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_ORDER } from '@/types'
@@ -310,24 +311,33 @@ export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskCli
         {/* Separator */}
         <div className="w-px h-5 bg-[#241f20]/10" />
 
-        {/* Sort — toggle buttons, click again to reverse */}
-        <div className="flex items-center gap-1">
-          {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => {
-            const active = sortBy === key
-            return (
-              <button
-                key={key}
-                onClick={() => handleSortClick(key)}
-                className={`h-7 px-2.5 rounded-full text-[12px] flex items-center gap-1 transition-all ${
-                  active ? 'bg-[#241f20] text-white' : 'bg-[#f5f5f7] text-[#6c6560] hover:bg-[#eee]'
-                }`}
-              >
-                {SORT_LABELS[key]}
-                {active && <span className="text-[10px]">{sortAsc ? '↑' : '↓'}</span>}
-              </button>
-            )
-          })}
-        </div>
+        {/* Sort — single button with dropdown, click header to toggle direction */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="h-7 px-3 rounded-full text-[12px] flex items-center gap-1.5 bg-[#f5f5f7] text-[#6c6560] hover:bg-[#eee] transition-all">
+              <ArrowUpDown className="h-3 w-3" />
+              {SORT_LABELS[sortBy]}
+              <span className="text-[10px]">{sortAsc ? '↑' : '↓'}</span>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[160px] p-1 rounded-xl" align="start">
+            {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => {
+              const active = sortBy === key
+              return (
+                <button
+                  key={key}
+                  onClick={() => handleSortClick(key)}
+                  className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                    active ? 'bg-[#241f20] text-white' : 'text-[#241f20] hover:bg-[#f5f5f7]'
+                  }`}
+                >
+                  {SORT_LABELS[key]}
+                  {active && <span className="text-xs">{sortAsc ? '↑' : '↓'}</span>}
+                </button>
+              )
+            })}
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* Results count */}
