@@ -213,7 +213,7 @@ export function TaskDetailPanel({ task, open, onOpenChange, onTaskUpdate, member
               <SelectTrigger className="w-[130px] h-8 rounded-full text-xs">
                 <div className="flex items-center gap-1.5">
                   <div className={`w-2 h-2 rounded-full ${STATUS_DOT[task.status]}`} />
-                  <SelectValue />
+                  <span>{STATUS_LABELS[task.status]}</span>
                 </div>
               </SelectTrigger>
               <SelectContent>

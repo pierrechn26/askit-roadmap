@@ -183,7 +183,9 @@ export function TaskTable({ tasks, onTasksChange, members, onTaskClick }: Props)
         </Select>
 
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-[140px] h-8 rounded-full text-sm"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-[140px] h-8 rounded-full text-sm">
+            <span>{filterStatus === 'all' ? 'Tout statut' : STATUS_LABELS[filterStatus as TaskStatus]}</span>
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tout statut</SelectItem>
             {Object.entries(STATUS_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
@@ -220,7 +222,7 @@ export function TaskTable({ tasks, onTasksChange, members, onTaskClick }: Props)
                 <div onClick={(e) => e.stopPropagation()}>
                   <Select value={task.status} onValueChange={(v) => updateTaskStatus(task.id, v as TaskStatus)}>
                     <SelectTrigger className={`w-[110px] h-7 text-xs rounded-full border-0 ${STATUS_COLORS[task.status]}`}>
-                      <SelectValue />
+                      <span>{STATUS_LABELS[task.status]}</span>
                     </SelectTrigger>
                     <SelectContent>
                       {Object.entries(STATUS_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
