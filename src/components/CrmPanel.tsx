@@ -329,15 +329,17 @@ export function CrmPanel({ deals, onDealsChange }: Props) {
             return (
               <div
                 key={stage}
-                className="flex-1 min-w-[220px]"
+                className="flex-1 min-w-[220px] flex flex-col"
                 onDragOver={(e) => handleDragOver(e, stage)}
                 onDrop={() => handleDrop(stage)}
               >
-                {/* Column header */}
-                <div className="flex items-center gap-2 mb-1 px-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CRM_STAGE_COLORS[stage] }} />
-                  <span className="text-sm font-semibold text-[#241f20]">{CRM_STAGE_LABELS[stage]}</span>
-                  <Badge className="bg-[#f5f5f7] text-[#241f20] border-0 rounded-full text-xs font-semibold ml-auto">{stageDeals.length}</Badge>
+                {/* Column header — fixed height */}
+                <div className="h-[52px] flex flex-col justify-center px-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: CRM_STAGE_COLORS[stage] }} />
+                    <span className="text-sm font-semibold text-[#241f20] leading-tight">{CRM_STAGE_LABELS[stage]}</span>
+                    <Badge className="bg-[#f5f5f7] text-[#241f20] border-0 rounded-full text-xs font-semibold ml-auto shrink-0">{stageDeals.length}</Badge>
+                  </div>
                 </div>
                 <p className="text-xs text-[#a39c95] px-2 mb-3">{fmt(stageTotal)} €/mois</p>
 
