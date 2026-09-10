@@ -18,7 +18,7 @@ function App() {
   const [tasks, setTasks] = useLocalStorage<Task[]>('askit-v3-tasks', DEFAULT_TASKS)
   const [objectives, setObjectives] = useLocalStorage<Objective[]>('askit-v3-objectives', DEFAULT_OBJECTIVES)
   const [members, setMembers] = useLocalStorage<TeamMember[]>('askit-v3-members', DEFAULT_MEMBERS)
-  const [deals, setDeals] = useLocalStorage<CrmDeal[]>('askit-v4-deals', DEFAULT_DEALS)
+  const [deals, setDeals] = useLocalStorage<CrmDeal[]>('askit-v5-deals', DEFAULT_DEALS)
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)

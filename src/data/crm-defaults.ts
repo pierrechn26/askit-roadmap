@@ -138,4 +138,21 @@ export const DEFAULT_DEALS: CrmDeal[] = [
     nextAction: 'Envoyer la relance email ; identifier qui gère le sujet côté Aime/Ollie',
     nextActionDate: '2026-09-12',
   },
+  {
+    id: 'nw-9',
+    company: 'Sova Care',
+    contacts: [
+      { id: 'nw-9c', name: 'Eva', email: 'eva@sova-care.com', phone: '', linkedin: 'https://www.linkedin.com/in/evalcq/' },
+    ],
+    amount: 0,
+    stage: 'r1',
+    notes: [
+      { id: 'nw-9n1', content: 'Fondatrice intéressée par le diagnostic car pas satisfaite de la solution Dialog AI (n\'aimait pas les gens de l\'équipe). Essaye en ce moment d\'en faire un elle-même.\nElle pense que c\'est vraiment le bon moment, car c\'est un vrai sujet d\'actualité.', author: 'Pierre', createdAt: '2026-09-10T17:00:00Z' },
+    ],
+    source: 'Salon The New Well',
+    createdAt: '2026-09-10',
+    closedAt: '',
+    nextAction: 'R1 prévu',
+    nextActionDate: '2026-09-11',
+  },
 ]
