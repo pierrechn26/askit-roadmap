@@ -269,8 +269,4 @@ export const DEFAULT_TASKS: Task[] = [
 
 export const DEFAULT_OBJECTIVES: Objective[] = [
   { id: '0', title: '100 clients actifs', subtitle: 'Objectif principal de l\'année 2026', type: 'annuel', category: 'Global', period: '2026', done: false },
-  { id: '1', title: 'Atteindre 15 clients actifs', subtitle: 'Focus onboarding + prospection active', type: 'mensuel', category: 'Commercial', period: '2026-09', done: false },
-  { id: '2', title: 'Atteindre 25 clients actifs', subtitle: 'Scale des canaux d\'acquisition', type: 'mensuel', category: 'Marketing', period: '2026-10', done: false },
-  { id: '3', title: 'Atteindre 40 clients actifs', subtitle: 'Partenariats et referral actifs', type: 'mensuel', category: 'Commercial', period: '2026-11', done: false },
-  { id: '4', title: 'Atteindre 100 clients actifs', subtitle: 'Objectif annuel final', type: 'mensuel', category: 'Global', period: '2026-12', done: false },
 ]
