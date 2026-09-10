@@ -15,7 +15,7 @@ import {
   Mail, Phone, ExternalLink,
 } from 'lucide-react'
 import { differenceInDays } from 'date-fns'
-import type { CrmDeal, CrmStage, CrmNote } from '@/types/crm'
+import type { CrmDeal, CrmStage, CrmNote, CrmContact } from '@/types/crm'
 import { CRM_STAGES, CRM_STAGE_LABELS, CRM_STAGE_COLORS } from '@/types/crm'
 import { formatDateFR, getDateUrgency, DATE_BADGE_STYLES } from '@/lib/dates'
 
@@ -34,18 +34,23 @@ export function CrmPanel({ deals, onDealsChange }: Props) {
 
   // New deal form
   const [form, setForm] = useState({
-    company: '', contact: '', email: '', phone: '', linkedin: '', amount: '', source: '', nextAction: '', nextActionDate: '',
+    company: '', contactName: '', contactEmail: '', contactPhone: '', contactLinkedin: '',
+    amount: '', source: '', nextAction: '', nextActionDate: '',
   })
 
   function createDeal() {
     if (!form.company.trim()) return
+    const firstContact: CrmContact = {
+      id: Date.now().toString() + '-c',
+      name: form.contactName.trim(),
+      email: form.contactEmail.trim(),
+      phone: form.contactPhone.trim(),
+      linkedin: form.contactLinkedin.trim(),
+    }
     const deal: CrmDeal = {
       id: Date.now().toString(),
       company: form.company.trim(),
-      contact: form.contact.trim(),
-      email: form.email.trim(),
-      phone: form.phone.trim(),
-      linkedin: form.linkedin.trim(),
+      contacts: firstContact.name ? [firstContact] : [],
       amount: parseFloat(form.amount) || 0,
       stage: 'a_contacter',
       notes: [],
@@ -56,7 +61,7 @@ export function CrmPanel({ deals, onDealsChange }: Props) {
       nextActionDate: form.nextActionDate,
     }
     onDealsChange([...deals, deal])
-    setForm({ company: '', contact: '', email: '', phone: '', linkedin: '', amount: '', source: '', nextAction: '', nextActionDate: '' })
+    setForm({ company: '', contactName: '', contactEmail: '', contactPhone: '', contactLinkedin: '', amount: '', source: '', nextAction: '', nextActionDate: '' })
     setCreateOpen(false)
   }
 
@@ -146,15 +151,16 @@ export function CrmPanel({ deals, onDealsChange }: Props) {
           <DialogContent className="rounded-2xl max-w-md">
             <DialogHeader><DialogTitle className="text-[#241f20]">Nouveau prospect</DialogTitle></DialogHeader>
             <div className="space-y-3 pt-2">
+              <Input placeholder="Entreprise" className="rounded-xl" value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} />
+              <p className="text-xs text-[#6c6560] font-medium">Contact principal</p>
               <div className="grid grid-cols-2 gap-2">
-                <Input placeholder="Entreprise" className="rounded-xl" value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} />
-                <Input placeholder="Nom du contact" className="rounded-xl" value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} />
+                <Input placeholder="Nom du contact" className="rounded-xl" value={form.contactName} onChange={(e) => setForm({ ...form, contactName: e.target.value })} />
+                <Input placeholder="Email" type="email" className="rounded-xl" value={form.contactEmail} onChange={(e) => setForm({ ...form, contactEmail: e.target.value })} />
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <Input placeholder="Email" type="email" className="rounded-xl" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-                <Input placeholder="Téléphone" type="tel" className="rounded-xl" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                <Input placeholder="Téléphone" type="tel" className="rounded-xl" value={form.contactPhone} onChange={(e) => setForm({ ...form, contactPhone: e.target.value })} />
+                <Input placeholder="URL LinkedIn" className="rounded-xl" value={form.contactLinkedin} onChange={(e) => setForm({ ...form, contactLinkedin: e.target.value })} />
               </div>
-              <Input placeholder="URL LinkedIn" className="rounded-xl" value={form.linkedin} onChange={(e) => setForm({ ...form, linkedin: e.target.value })} />
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-xs text-[#a39c95] mb-1 block">Montant mensuel (€)</label>
@@ -299,7 +305,9 @@ export function CrmPanel({ deals, onDealsChange }: Props) {
                   {urg === 'overdue' && <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />}
                   <div className="flex-1 min-w-0">
                     <span className="text-sm font-medium text-[#241f20]">{deal.company}</span>
-                    <span className="text-xs text-[#a39c95] ml-2">— {deal.contact}</span>
+                    {(deal.contacts || []).length > 0 && (
+                      <span className="text-xs text-[#a39c95] ml-2">— {(deal.contacts || [])[0]?.name}</span>
+                    )}
                     <p className="text-xs text-[#6c6560]">{deal.nextAction}</p>
                   </div>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full shrink-0 ${DATE_BADGE_STYLES[urg]}`}>
@@ -382,7 +390,11 @@ function DealCard({ deal, onDragStart, onClick }: { deal: CrmDeal; onDragStart: 
         <GripVertical className="h-4 w-4 text-[#a39c95] mt-0.5 shrink-0 opacity-30" />
         <div className="flex-1 min-w-0">
           <p className="text-[15px] font-semibold text-[#241f20] truncate leading-tight">{deal.company}</p>
-          <p className="text-sm text-[#6c6560] truncate mt-0.5">{deal.contact}</p>
+          {(deal.contacts || []).length > 0 && (
+            <p className="text-sm text-[#6c6560] truncate mt-0.5">
+              {(deal.contacts || []).map((c) => c.name).join(', ')}
+            </p>
+          )}
           {deal.amount > 0 && (
             <p className="text-sm font-bold text-[#f8571f] mt-2">{deal.amount.toLocaleString('fr-FR')} €/mois</p>
           )}
@@ -411,11 +423,35 @@ function DealDetailSheet({ deal, open, onOpenChange, onUpdate, onDelete }: {
   onUpdate: (d: CrmDeal) => void; onDelete: (id: string) => void;
 }) {
   const [newNote, setNewNote] = useState('')
+  const [addingContact, setAddingContact] = useState(false)
+  const [newContact, setNewContact] = useState({ name: '', email: '', phone: '', linkedin: '' })
 
   if (!deal) return null
 
   function update<K extends keyof CrmDeal>(key: K, value: CrmDeal[K]) {
     onUpdate({ ...deal!, [key]: value })
+  }
+
+  function addContact() {
+    if (!newContact.name.trim()) return
+    const c: CrmContact = {
+      id: Date.now().toString(),
+      name: newContact.name.trim(),
+      email: newContact.email.trim(),
+      phone: newContact.phone.trim(),
+      linkedin: newContact.linkedin.trim(),
+    }
+    update('contacts', [...(deal!.contacts || []), c])
+    setNewContact({ name: '', email: '', phone: '', linkedin: '' })
+    setAddingContact(false)
+  }
+
+  function updateContact(contactId: string, updates: Partial<CrmContact>) {
+    update('contacts', (deal!.contacts || []).map((c) => c.id === contactId ? { ...c, ...updates } : c))
+  }
+
+  function removeContact(contactId: string) {
+    update('contacts', (deal!.contacts || []).filter((c) => c.id !== contactId))
   }
 
   function addNote() {
@@ -451,8 +487,9 @@ function DealDetailSheet({ deal, open, onOpenChange, onUpdate, onDelete }: {
           <SheetTitle className="sr-only">Détail du deal</SheetTitle>
           <Input value={deal.company} onChange={(e) => update('company', e.target.value)}
             className="text-lg font-semibold border-0 p-0 h-auto focus-visible:ring-0 text-[#241f20]" />
-          <Input value={deal.contact} onChange={(e) => update('contact', e.target.value)}
-            placeholder="Contact" className="text-sm border-0 p-0 h-auto focus-visible:ring-0 text-[#6c6560] mt-1" />
+          {(deal.contacts || []).length > 0 && (
+            <p className="text-sm text-[#6c6560] mt-1">{(deal.contacts || []).map((c) => c.name).join(', ')}</p>
+          )}
           <div className="flex gap-2 mt-3 flex-wrap">
             <Select value={deal.stage} onValueChange={(v) => {
               const closedAt = (v === 'deal_gagne' || v === 'deal_perdu') ? new Date().toISOString().slice(0, 10) : deal.closedAt
@@ -485,25 +522,67 @@ function DealDetailSheet({ deal, open, onOpenChange, onUpdate, onDelete }: {
 
         <ScrollArea className="flex-1">
           <div className="px-6 py-4 space-y-5">
-            {/* Contact info */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Mail className="h-3.5 w-3.5 text-[#a39c95] shrink-0" />
-                <Input value={deal.email || ''} onChange={(e) => update('email', e.target.value)}
-                  placeholder="Email" type="email" className="rounded-lg text-sm h-8" />
+            {/* Contacts */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-medium text-[#6c6560] uppercase tracking-wider">Contacts</label>
+                <button onClick={() => setAddingContact(true)} className="text-xs text-[#f8571f] hover:underline flex items-center gap-0.5">
+                  <Plus className="h-3 w-3" /> Ajouter
+                </button>
               </div>
-              <div className="flex items-center gap-2">
-                <Phone className="h-3.5 w-3.5 text-[#a39c95] shrink-0" />
-                <Input value={deal.phone || ''} onChange={(e) => update('phone', e.target.value)}
-                  placeholder="Téléphone" type="tel" className="rounded-lg text-sm h-8" />
-              </div>
-              <div className="flex items-center gap-2">
-                <ExternalLink className="h-3.5 w-3.5 text-[#a39c95] shrink-0" />
-                <Input value={deal.linkedin || ''} onChange={(e) => update('linkedin', e.target.value)}
-                  placeholder="URL LinkedIn" className="rounded-lg text-sm h-8" />
-                {deal.linkedin && (
-                  <a href={deal.linkedin} target="_blank" rel="noopener noreferrer"
-                    className="text-[10px] text-[#f8571f] hover:underline shrink-0">Ouvrir</a>
+
+              <div className="space-y-2">
+                {(deal.contacts || []).map((c) => (
+                  <div key={c.id} className="group bg-[#f5f5f7] rounded-xl p-3 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Input value={c.name} onChange={(e) => updateContact(c.id, { name: e.target.value })}
+                        className="text-sm font-semibold border-0 p-0 h-auto focus-visible:ring-0 bg-transparent text-[#241f20]" />
+                      <button onClick={() => removeContact(c.id)} className="opacity-0 group-hover:opacity-100 text-[#a39c95] hover:text-red-500 transition-all">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Mail className="h-3 w-3 text-[#a39c95] shrink-0" />
+                      <Input value={c.email} onChange={(e) => updateContact(c.id, { email: e.target.value })}
+                        placeholder="Email" type="email" className="text-xs border-0 p-0 h-auto focus-visible:ring-0 bg-transparent" />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Phone className="h-3 w-3 text-[#a39c95] shrink-0" />
+                      <Input value={c.phone} onChange={(e) => updateContact(c.id, { phone: e.target.value })}
+                        placeholder="Téléphone" type="tel" className="text-xs border-0 p-0 h-auto focus-visible:ring-0 bg-transparent" />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <ExternalLink className="h-3 w-3 text-[#a39c95] shrink-0" />
+                      <Input value={c.linkedin} onChange={(e) => updateContact(c.id, { linkedin: e.target.value })}
+                        placeholder="LinkedIn" className="text-xs border-0 p-0 h-auto focus-visible:ring-0 bg-transparent flex-1" />
+                      {c.linkedin && (
+                        <a href={c.linkedin} target="_blank" rel="noopener noreferrer" className="text-[9px] text-[#f8571f] hover:underline shrink-0">Ouvrir</a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {(deal.contacts || []).length === 0 && !addingContact && (
+                  <p className="text-xs text-[#a39c95] text-center py-2">Aucun contact</p>
+                )}
+
+                {addingContact && (
+                  <div className="border border-[rgba(36,31,32,0.08)] rounded-xl p-3 space-y-2">
+                    <Input placeholder="Nom" className="rounded-lg text-sm h-8" value={newContact.name}
+                      onChange={(e) => setNewContact({ ...newContact, name: e.target.value })} autoFocus />
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input placeholder="Email" type="email" className="rounded-lg text-xs h-7" value={newContact.email}
+                        onChange={(e) => setNewContact({ ...newContact, email: e.target.value })} />
+                      <Input placeholder="Téléphone" type="tel" className="rounded-lg text-xs h-7" value={newContact.phone}
+                        onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })} />
+                    </div>
+                    <Input placeholder="URL LinkedIn" className="rounded-lg text-xs h-7" value={newContact.linkedin}
+                      onChange={(e) => setNewContact({ ...newContact, linkedin: e.target.value })} />
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={addContact} disabled={!newContact.name.trim()} className="h-7 rounded-lg bg-[#241f20] text-white text-xs flex-1">Ajouter</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setAddingContact(false)} className="h-7 text-xs"><X className="h-3 w-3" /></Button>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>

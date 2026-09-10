@@ -43,13 +43,18 @@ export interface CrmNote {
   createdAt: string
 }
 
-export interface CrmDeal {
+export interface CrmContact {
   id: string
-  company: string
-  contact: string
+  name: string
   email: string
   phone: string
   linkedin: string
+}
+
+export interface CrmDeal {
+  id: string
+  company: string
+  contacts: CrmContact[]
   amount: number
   stage: CrmStage
   notes: CrmNote[]
