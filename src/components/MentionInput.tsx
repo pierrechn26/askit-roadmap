@@ -22,7 +22,7 @@ export function MentionInput({ value, onChange, onSubmit, placeholder, members, 
     const el = textareaRef.current
     if (!el) return
     el.style.height = 'auto'
-    el.style.height = `${Math.min(el.scrollHeight, 120)}px`
+    el.style.height = `${Math.min(el.scrollHeight, 150)}px`
   }, [])
 
   useEffect(() => {
@@ -113,7 +113,8 @@ export function MentionInput({ value, onChange, onSubmit, placeholder, members, 
         onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
         placeholder={placeholder}
         rows={1}
-        className={`flex w-full border border-input bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-none overflow-hidden ${className || ''}`}
+        className={`flex w-full border border-input bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-none overflow-y-auto ${className || ''}`}
+        style={{ maxHeight: '150px' }}
       />
 
       {showSuggestions && (

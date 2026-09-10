@@ -88,7 +88,7 @@ export interface Objective {
   id: string
   title: string
   subtitle: string
-  type: 'mensuel' | 'hebdo'
+  type: 'annuel' | 'mensuel' | 'hebdo'
   period: string
   done: boolean
 }
