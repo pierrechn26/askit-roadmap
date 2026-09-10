@@ -1,10 +1,10 @@
 import type { Task, Objective, TeamMember } from '@/types'
 
 export const DEFAULT_MEMBERS: TeamMember[] = [
-  { name: 'Pierre', color: '#f8571f' },
-  { name: 'Membre 2', color: '#a7abdd' },
-  { name: 'Membre 3', color: '#accce9' },
-  { name: 'Membre 4', color: '#241f20' },
+  { name: 'Pierre', email: '', color: '#f8571f', role: 'general' },
+  { name: 'Bastien', email: '', color: '#a7abdd', role: 'dev' },
+  { name: 'Membre 3', email: '', color: '#accce9', role: 'general' },
+  { name: 'Membre 4', email: '', color: '#241f20', role: 'general' },
 ]
 
 export const DEFAULT_CATEGORIES = [
@@ -28,6 +28,8 @@ export const DEFAULT_TASKS: Task[] = [
     status: 'en_cours',
     category: 'Ops',
     activities: [],
+    subtasks: [],
+    attachments: [],
   },
   {
     id: '2',
@@ -40,36 +42,14 @@ export const DEFAULT_TASKS: Task[] = [
     status: 'en_cours',
     category: 'Commercial',
     activities: [],
+    subtasks: [],
+    attachments: [],
   },
 ]
 
 export const DEFAULT_OBJECTIVES: Objective[] = [
-  {
-    id: '1',
-    title: 'Atteindre 15 clients actifs',
-    type: 'mensuel',
-    period: '2026-09',
-    done: false,
-  },
-  {
-    id: '2',
-    title: 'Atteindre 25 clients actifs',
-    type: 'mensuel',
-    period: '2026-10',
-    done: false,
-  },
-  {
-    id: '3',
-    title: 'Atteindre 40 clients actifs',
-    type: 'mensuel',
-    period: '2026-11',
-    done: false,
-  },
-  {
-    id: '4',
-    title: 'Atteindre 100 clients actifs',
-    type: 'mensuel',
-    period: '2026-12',
-    done: false,
-  },
+  { id: '1', title: 'Atteindre 15 clients actifs', type: 'mensuel', period: '2026-09', done: false },
+  { id: '2', title: 'Atteindre 25 clients actifs', type: 'mensuel', period: '2026-10', done: false },
+  { id: '3', title: 'Atteindre 40 clients actifs', type: 'mensuel', period: '2026-11', done: false },
+  { id: '4', title: 'Atteindre 100 clients actifs', type: 'mensuel', period: '2026-12', done: false },
 ]

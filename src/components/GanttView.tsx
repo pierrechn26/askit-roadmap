@@ -2,14 +2,14 @@ import { useMemo } from 'react'
 import type { Task, TeamMember } from '@/types'
 import {
   differenceInDays,
-  startOfWeek,
   addDays,
   format,
   parseISO,
-  isWithinInterval,
   startOfMonth,
   endOfMonth,
   addMonths,
+  isSameDay,
+  isWeekend,
 } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -19,7 +19,7 @@ interface Props {
   onTaskClick: (task: Task) => void
 }
 
-const STATUS_COLORS: Record<string, string> = {
+const STATUS_BAR_COLORS: Record<string, string> = {
   a_faire: '#a39c95',
   en_cours: '#f8571f',
   termine: '#a7abdd',
@@ -27,25 +27,15 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 export function GanttView({ tasks, members, onTaskClick }: Props) {
-  const { months, startDate, totalDays } = useMemo(() => {
+  const { months, startDate, totalDays, days } = useMemo(() => {
     const now = new Date()
     const start = startOfMonth(now)
     const monthList = Array.from({ length: 4 }, (_, i) => addMonths(start, i))
     const end = endOfMonth(monthList[monthList.length - 1])
-    const days = differenceInDays(end, start) + 1
-    return { months: monthList, startDate: start, totalDays: days }
+    const total = differenceInDays(end, start) + 1
+    const dayList = Array.from({ length: total }, (_, i) => addDays(start, i))
+    return { months: monthList, startDate: start, totalDays: total, days: dayList }
   }, [])
-
-  const weeks = useMemo(() => {
-    const result: Date[] = []
-    let current = startOfWeek(startDate, { weekStartsOn: 1 })
-    const endDate = addDays(startDate, totalDays)
-    while (current < endDate) {
-      result.push(current)
-      current = addDays(current, 7)
-    }
-    return result
-  }, [startDate, totalDays])
 
   const memberColorMap = useMemo(() => {
     const map: Record<string, string> = {}
@@ -66,36 +56,40 @@ export function GanttView({ tasks, members, onTaskClick }: Props) {
     const left = (differenceInDays(clampedStart, startDate) / totalDays) * 100
     const width = ((differenceInDays(clampedEnd, clampedStart) + 1) / totalDays) * 100
 
-    return { left: `${left}%`, width: `${Math.max(width, 0.8)}%` }
+    return { left: `${left}%`, width: `${Math.max(width, 0.5)}%` }
   }
 
-  // Group tasks by assignee (tasks can appear under multiple assignees)
+  // Group tasks by assignee
   const grouped = useMemo(() => {
     const map: Record<string, Task[]> = {}
     members.forEach((m) => { map[m.name] = [] })
     tasks.forEach((t) => {
       t.assignees.forEach((assignee) => {
         if (!map[assignee]) map[assignee] = []
-        map[assignee].push(t)
+        if (!map[assignee].find((x) => x.id === t.id)) {
+          map[assignee].push(t)
+        }
       })
     })
     return map
   }, [tasks, members])
 
-  // Today marker
+  const today = new Date()
   const todayPct = useMemo(() => {
-    const now = new Date()
     const endDate = addDays(startDate, totalDays)
-    if (now < startDate || now > endDate) return null
-    return (differenceInDays(now, startDate) / totalDays) * 100
-  }, [startDate, totalDays])
+    if (today < startDate || today > endDate) return null
+    return (differenceInDays(today, startDate) / totalDays) * 100
+  }, [startDate, totalDays, today])
+
+  // Determine which days to show labels (every Monday + 1st of month)
+  const dayWidth = 100 / totalDays
 
   return (
     <div className="overflow-x-auto rounded-2xl border-0 shadow-sm bg-white">
-      <div className="min-w-[900px]">
+      <div style={{ minWidth: `${Math.max(900, totalDays * 8)}px` }}>
         {/* Month headers */}
         <div className="flex border-b border-[rgba(36,31,32,0.06)]">
-          <div className="w-[180px] shrink-0 p-3 font-semibold text-sm border-r border-[rgba(36,31,32,0.06)] text-[#241f20]">
+          <div className="w-[160px] shrink-0 p-3 font-semibold text-sm border-r border-[rgba(36,31,32,0.06)] text-[#241f20]">
             Membre
           </div>
           <div className="flex-1 relative">
@@ -108,7 +102,7 @@ export function GanttView({ tasks, members, onTaskClick }: Props) {
                 return (
                   <div
                     key={m.toISOString()}
-                    className="text-center text-sm font-medium py-2.5 border-r border-[rgba(36,31,32,0.06)] text-[#241f20] capitalize"
+                    className="text-center text-sm font-medium py-2 border-r border-[rgba(36,31,32,0.06)] text-[#241f20] capitalize"
                     style={{ width: `${widthPct}%` }}
                   >
                     {format(m, 'MMMM yyyy', { locale: fr })}
@@ -119,30 +113,36 @@ export function GanttView({ tasks, members, onTaskClick }: Props) {
           </div>
         </div>
 
-        {/* Week sub-headers */}
+        {/* Day headers */}
         <div className="flex border-b border-[rgba(36,31,32,0.06)] bg-[#f5f5f7]/50">
-          <div className="w-[180px] shrink-0 border-r border-[rgba(36,31,32,0.06)]" />
-          <div className="flex-1 relative flex h-5">
-            {weeks.map((w) => {
-              const endDate = addDays(startDate, totalDays)
-              const wEnd = addDays(w, 6)
-              if (w > endDate) return null
-              const clampedEnd = wEnd > endDate ? endDate : wEnd
-              const clampedStart = w < startDate ? startDate : w
-              const left = (differenceInDays(clampedStart, startDate) / totalDays) * 100
-              const width = ((differenceInDays(clampedEnd, clampedStart) + 1) / totalDays) * 100
-
-              const isCurrentWeek = isWithinInterval(new Date(), { start: w, end: wEnd })
+          <div className="w-[160px] shrink-0 border-r border-[rgba(36,31,32,0.06)]" />
+          <div className="flex-1 relative h-5">
+            {days.map((d, i) => {
+              const isToday = isSameDay(d, today)
+              const dayNum = d.getDate()
+              const isMonday = d.getDay() === 1
+              const is1st = dayNum === 1
+              const showLabel = isMonday || is1st || isToday
+              const weekend = isWeekend(d)
 
               return (
                 <div
-                  key={w.toISOString()}
-                  className={`text-[10px] text-center border-r border-[rgba(36,31,32,0.04)] flex items-center justify-center ${
-                    isCurrentWeek ? 'bg-[#f8571f]/8 font-semibold text-[#f8571f]' : 'text-[#a39c95]'
-                  }`}
-                  style={{ position: 'absolute', left: `${left}%`, width: `${width}%` }}
+                  key={i}
+                  className="absolute top-0 bottom-0 border-r flex items-center justify-center"
+                  style={{
+                    left: `${i * dayWidth}%`,
+                    width: `${dayWidth}%`,
+                    borderColor: is1st ? 'rgba(36,31,32,0.12)' : 'rgba(36,31,32,0.03)',
+                    backgroundColor: isToday ? 'rgba(248,87,31,0.08)' : weekend ? 'rgba(36,31,32,0.02)' : 'transparent',
+                  }}
                 >
-                  S{format(w, 'ww')}
+                  {showLabel && (
+                    <span className={`text-[8px] leading-none ${
+                      isToday ? 'text-[#f8571f] font-bold' : 'text-[#a39c95]'
+                    }`}>
+                      {dayNum}
+                    </span>
+                  )}
                 </div>
               )
             })}
@@ -150,60 +150,84 @@ export function GanttView({ tasks, members, onTaskClick }: Props) {
         </div>
 
         {/* Rows */}
-        {Object.entries(grouped).map(([name, memberTasks]) => (
-          <div key={name}>
-            {memberTasks.length === 0 ? (
-              <div className="flex border-b border-[rgba(36,31,32,0.04)] hover:bg-[#f5f5f7]/30 transition-colors">
-                <div className="w-[180px] shrink-0 p-2.5 border-r border-[rgba(36,31,32,0.06)] flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ background: memberColorMap[name] || '#888' }} />
-                  <span className="text-sm font-medium text-[#241f20]">{name}</span>
-                </div>
-                <div className="flex-1 relative h-10">
-                  <span className="text-xs text-[#a39c95] absolute top-1/2 left-4 -translate-y-1/2">Pas de tâche</span>
-                </div>
-              </div>
-            ) : (
-              memberTasks.map((task, i) => (
-                <div key={task.id} className="flex border-b border-[rgba(36,31,32,0.04)] hover:bg-[#f5f5f7]/30 transition-colors">
-                  {i === 0 ? (
-                    <div className="w-[180px] shrink-0 p-2.5 border-r border-[rgba(36,31,32,0.06)] flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ background: memberColorMap[name] || '#888' }} />
-                      <span className="text-sm font-medium text-[#241f20]">{name}</span>
-                    </div>
-                  ) : (
-                    <div className="w-[180px] shrink-0 border-r border-[rgba(36,31,32,0.06)]" />
-                  )}
-                  <div className="flex-1 relative h-11">
-                    {(() => {
-                      const style = getBarStyle(task)
-                      if (!style) return null
-                      return (
-                        <div
-                          className="absolute top-1/2 -translate-y-1/2 h-7 rounded-lg text-white text-[11px] font-medium flex items-center px-2.5 truncate cursor-pointer shadow-sm hover:shadow-md hover:brightness-110 transition-all"
-                          style={{
-                            ...style,
-                            backgroundColor: STATUS_COLORS[task.status] || '#f8571f',
-                          }}
-                          title={`${task.title} (${task.startDate} → ${task.dueDate})`}
-                          onClick={() => onTaskClick(task)}
-                        >
-                          {task.title}
-                        </div>
-                      )
-                    })()}
-                    {/* Today line */}
-                    {todayPct !== null && (
-                      <div
-                        className="absolute top-0 bottom-0 w-0.5 bg-[#f8571f] z-10 pointer-events-none"
-                        style={{ left: `${todayPct}%` }}
-                      />
+        {Object.entries(grouped).map(([name, memberTasks]) => {
+          const member = members.find((m) => m.name === name)
+          return (
+            <div key={name}>
+              {memberTasks.length === 0 ? (
+                <div className="flex border-b border-[rgba(36,31,32,0.04)] hover:bg-[#f5f5f7]/30 transition-colors">
+                  <div className="w-[160px] shrink-0 p-2 border-r border-[rgba(36,31,32,0.06)] flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ background: memberColorMap[name] || '#888' }} />
+                    <span className="text-sm font-medium text-[#241f20]">{name}</span>
+                    {member?.role === 'dev' && (
+                      <span className="text-[9px] bg-[#a7abdd]/20 text-[#241f20] px-1.5 py-0.5 rounded-full">DEV</span>
                     )}
                   </div>
+                  <div className="flex-1 relative h-10">
+                    <span className="text-xs text-[#a39c95] absolute top-1/2 left-4 -translate-y-1/2">Pas de tâche</span>
+                  </div>
                 </div>
-              ))
-            )}
-          </div>
-        ))}
+              ) : (
+                memberTasks.map((task, i) => (
+                  <div key={task.id} className="flex border-b border-[rgba(36,31,32,0.04)] hover:bg-[#f5f5f7]/30 transition-colors">
+                    {i === 0 ? (
+                      <div className="w-[160px] shrink-0 p-2 border-r border-[rgba(36,31,32,0.06)] flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ background: memberColorMap[name] || '#888' }} />
+                        <span className="text-sm font-medium text-[#241f20]">{name}</span>
+                        {member?.role === 'dev' && (
+                          <span className="text-[9px] bg-[#a7abdd]/20 text-[#241f20] px-1.5 py-0.5 rounded-full">DEV</span>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="w-[160px] shrink-0 border-r border-[rgba(36,31,32,0.06)]" />
+                    )}
+                    <div className="flex-1 relative h-11">
+                      {/* Weekend stripes */}
+                      {days.map((d, di) => isWeekend(d) ? (
+                        <div
+                          key={di}
+                          className="absolute top-0 bottom-0 bg-[rgba(36,31,32,0.015)]"
+                          style={{ left: `${di * dayWidth}%`, width: `${dayWidth}%` }}
+                        />
+                      ) : null)}
+
+                      {/* Task bar */}
+                      {(() => {
+                        const style = getBarStyle(task)
+                        if (!style) return null
+                        const subtasks = task.subtasks || []
+                        const stDone = subtasks.filter((s) => s.done).length
+                        return (
+                          <div
+                            className="absolute top-1/2 -translate-y-1/2 h-7 rounded-lg text-white text-[11px] font-medium flex items-center px-2 truncate cursor-pointer shadow-sm hover:shadow-md hover:brightness-110 transition-all"
+                            style={{ ...style, backgroundColor: STATUS_BAR_COLORS[task.status] || '#f8571f' }}
+                            title={`${task.title} (${task.startDate} → ${task.dueDate})`}
+                            onClick={() => onTaskClick(task)}
+                          >
+                            <span className="truncate">{task.title}</span>
+                            {subtasks.length > 0 && (
+                              <span className="ml-1.5 text-[9px] opacity-80 shrink-0">
+                                {stDone}/{subtasks.length}
+                              </span>
+                            )}
+                          </div>
+                        )
+                      })()}
+
+                      {/* Today line */}
+                      {todayPct !== null && (
+                        <div
+                          className="absolute top-0 bottom-0 w-0.5 bg-[#f8571f] z-10 pointer-events-none"
+                          style={{ left: `${todayPct}%` }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
