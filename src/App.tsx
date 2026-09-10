@@ -11,10 +11,10 @@ import { LayoutDashboard, ListTodo, GanttChart, Users } from 'lucide-react'
 import type { Task, Objective, TeamMember } from '@/types'
 
 function App() {
-  const [clientCount, setClientCount] = useLocalStorage('askit-clients', 10)
-  const [tasks, setTasks] = useLocalStorage<Task[]>('askit-tasks', DEFAULT_TASKS)
-  const [objectives, setObjectives] = useLocalStorage<Objective[]>('askit-objectives', DEFAULT_OBJECTIVES)
-  const [members, setMembers] = useLocalStorage<TeamMember[]>('askit-members', DEFAULT_MEMBERS)
+  const [clientCount, setClientCount] = useLocalStorage('askit-v2-clients', 10)
+  const [tasks, setTasks] = useLocalStorage<Task[]>('askit-v2-tasks', DEFAULT_TASKS)
+  const [objectives, setObjectives] = useLocalStorage<Objective[]>('askit-v2-objectives', DEFAULT_OBJECTIVES)
+  const [members, setMembers] = useLocalStorage<TeamMember[]>('askit-v2-members', DEFAULT_MEMBERS)
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
