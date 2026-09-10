@@ -287,9 +287,19 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
             <div className="w-14 h-14 rounded-2xl bg-[#241f20] flex items-center justify-center shadow-lg">
               <Trophy className="h-7 w-7 text-[#f8571f]" />
             </div>
-            <div>
-              <h2 className="text-2xl font-semibold text-[#241f20] tracking-tight">Objectif 2026</h2>
-              <p className="text-[#6c6560] text-sm">100 clients actifs d'ici fin décembre</p>
+            <div className="flex-1">
+              <h2 className="text-2xl font-semibold text-[#241f20] tracking-tight">Objectifs 2026</h2>
+              {annual.length > 0 ? (
+                <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1">
+                  {annual.map((obj) => (
+                    <p key={obj.id} className={`text-sm ${obj.done ? 'line-through text-[#a39c95]' : 'text-[#6c6560]'}`}>
+                      {obj.title}
+                    </p>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-[#a39c95] mt-1">Aucun objectif annuel défini</p>
+              )}
             </div>
           </div>
           <div className="space-y-4">
