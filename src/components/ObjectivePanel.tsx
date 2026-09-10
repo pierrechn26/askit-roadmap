@@ -31,6 +31,7 @@ interface Props {
 export function ObjectivePanel({ clientCount, onClientCountChange, objectives, onObjectivesChange }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [newTitle, setNewTitle] = useState('')
+  const [newSubtitle, setNewSubtitle] = useState('')
   const [newType, setNewType] = useState<'mensuel' | 'hebdo'>('mensuel')
   const [newPeriod, setNewPeriod] = useState('2026-10')
   const [editingCount, setEditingCount] = useState(false)
@@ -38,7 +39,6 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
   const target = 100
   const pct = Math.round((clientCount / target) * 100)
 
-  // Milestones for the progress bar
   const milestones = [
     { value: 25, label: '25' },
     { value: 50, label: '50' },
@@ -52,19 +52,19 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
       {
         id: Date.now().toString(),
         title: newTitle.trim(),
+        subtitle: newSubtitle.trim(),
         type: newType,
         period: newPeriod,
         done: false,
       },
     ])
     setNewTitle('')
+    setNewSubtitle('')
     setDialogOpen(false)
   }
 
   function toggleDone(id: string) {
-    onObjectivesChange(
-      objectives.map((o) => (o.id === id ? { ...o, done: !o.done } : o)),
-    )
+    onObjectivesChange(objectives.map((o) => (o.id === id ? { ...o, done: !o.done } : o)))
   }
 
   function removeObjective(id: string) {
@@ -90,7 +90,6 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
             </div>
           </div>
 
-          {/* Big number + progress */}
           <div className="space-y-4">
             <div className="flex justify-between items-end">
               <div className="flex items-baseline gap-2">
@@ -120,10 +119,8 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
               </div>
             </div>
 
-            {/* Enhanced progress bar */}
             <div className="relative pt-1">
               <div className="h-6 bg-[#f5f5f7] rounded-full overflow-hidden relative shadow-inner">
-                {/* Filled portion */}
                 <div
                   className="h-full rounded-full transition-all duration-700 ease-out relative"
                   style={{
@@ -131,56 +128,23 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
                     background: 'linear-gradient(115deg, #f8571f 0%, #ff7b4f 40%, #accce9 80%, #a7abdd 100%)',
                   }}
                 >
-                  {/* Shine effect */}
                   <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/25 to-transparent" />
                 </div>
-
-                {/* Milestone markers */}
                 {milestones.map((m) => (
-                  <div
-                    key={m.value}
-                    className="absolute top-0 bottom-0 flex items-center"
-                    style={{ left: `${m.value}%` }}
-                  >
+                  <div key={m.value} className="absolute top-0 bottom-0 flex items-center" style={{ left: `${m.value}%` }}>
                     <div className={`w-0.5 h-full ${pct >= m.value ? 'bg-white/40' : 'bg-[#241f20]/10'}`} />
                   </div>
                 ))}
               </div>
-
-              {/* Labels under the bar */}
               <div className="relative mt-1.5 flex justify-between text-[10px] text-[#a39c95] px-0.5">
                 <span>0</span>
                 {milestones.map((m) => (
-                  <span
-                    key={m.value}
-                    className={`${pct >= m.value ? 'text-[#f8571f] font-medium' : ''}`}
-                    style={{ position: 'absolute', left: `${m.value}%`, transform: 'translateX(-50%)' }}
-                  >
+                  <span key={m.value} className={pct >= m.value ? 'text-[#f8571f] font-medium' : ''} style={{ position: 'absolute', left: `${m.value}%`, transform: 'translateX(-50%)' }}>
                     {m.label}
                   </span>
                 ))}
                 <span>100</span>
               </div>
-            </div>
-
-            {/* Monthly sub-targets as mini cards */}
-            <div className="grid grid-cols-4 gap-2 mt-2">
-              {monthly.map((obj) => {
-                const month = MONTHS[parseInt(obj.period.split('-')[1]) - 1]?.slice(0, 3)
-                return (
-                  <div
-                    key={obj.id}
-                    className={`text-center py-2 px-1 rounded-xl text-xs transition-all ${
-                      obj.done
-                        ? 'bg-[#f8571f]/10 text-[#f8571f] font-semibold'
-                        : 'bg-[#f5f5f7] text-[#6c6560]'
-                    }`}
-                  >
-                    <p className="font-medium">{month}</p>
-                    <p className="text-[10px] mt-0.5 opacity-70">{obj.title.replace('Atteindre ', '')}</p>
-                  </div>
-                )
-              })}
             </div>
           </div>
         </div>
@@ -188,7 +152,7 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
 
       {/* Objectifs mensuels */}
       <div>
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold flex items-center gap-2 text-[#241f20]">
             <Target className="h-5 w-5 text-[#f8571f]" /> Objectifs mensuels
           </h3>
@@ -207,6 +171,12 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
                   placeholder="Titre de l'objectif"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
+                  className="rounded-xl"
+                />
+                <Input
+                  placeholder="Sous-titre / description courte"
+                  value={newSubtitle}
+                  onChange={(e) => setNewSubtitle(e.target.value)}
                   className="rounded-xl"
                 />
                 <Select value={newType} onValueChange={(v) => setNewType(v as 'mensuel' | 'hebdo')}>
@@ -228,12 +198,7 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
                     </SelectContent>
                   </Select>
                 ) : (
-                  <Input
-                    placeholder="ex: 2026-W38"
-                    value={newPeriod}
-                    onChange={(e) => setNewPeriod(e.target.value)}
-                    className="rounded-xl"
-                  />
+                  <Input placeholder="ex: 2026-W38" value={newPeriod} onChange={(e) => setNewPeriod(e.target.value)} className="rounded-xl" />
                 )}
                 <Button onClick={addObjective} className="w-full rounded-full bg-[#f8571f] hover:bg-[#e04d1a] text-white">
                   Ajouter
@@ -243,29 +208,9 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
           </Dialog>
         </div>
 
-        <div className="grid gap-2">
+        <div className="grid gap-3">
           {monthly.map((obj) => (
-            <Card
-              key={obj.id}
-              className={`p-3.5 flex items-center gap-3 rounded-2xl border-0 shadow-sm transition-all hover:shadow-md ${obj.done ? 'opacity-50' : ''}`}
-            >
-              <button onClick={() => toggleDone(obj.id)} className="shrink-0">
-                {obj.done ? (
-                  <CheckCircle2 className="h-5 w-5 text-[#f8571f]" />
-                ) : (
-                  <Circle className="h-5 w-5 text-[#a39c95]" />
-                )}
-              </button>
-              <span className={`flex-1 font-medium ${obj.done ? 'line-through text-[#a39c95]' : 'text-[#241f20]'}`}>
-                {obj.title}
-              </span>
-              <Badge className="bg-[#f5f5f7] text-[#6c6560] border-0 rounded-full text-xs font-medium">
-                {formatPeriod(obj.period, obj.type)}
-              </Badge>
-              <button onClick={() => removeObjective(obj.id)} className="text-[#a39c95] hover:text-[#ef4444] text-sm transition-colors">
-                &times;
-              </button>
-            </Card>
+            <ObjectiveCard key={obj.id} obj={obj} onToggle={toggleDone} onRemove={removeObjective} />
           ))}
         </div>
       </div>
@@ -273,32 +218,66 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
       {/* Objectifs hebdo */}
       {weekly.length > 0 && (
         <div>
-          <h3 className="text-lg font-semibold mb-3 text-[#241f20]">Objectifs hebdomadaires</h3>
-          <div className="grid gap-2">
+          <h3 className="text-lg font-semibold mb-4 text-[#241f20]">Objectifs hebdomadaires</h3>
+          <div className="grid gap-3">
             {weekly.map((obj) => (
-              <Card
-                key={obj.id}
-                className={`p-3.5 flex items-center gap-3 rounded-2xl border-0 shadow-sm ${obj.done ? 'opacity-50' : ''}`}
-              >
-                <button onClick={() => toggleDone(obj.id)} className="shrink-0">
-                  {obj.done ? (
-                    <CheckCircle2 className="h-5 w-5 text-[#f8571f]" />
-                  ) : (
-                    <Circle className="h-5 w-5 text-[#a39c95]" />
-                  )}
-                </button>
-                <span className={`flex-1 font-medium ${obj.done ? 'line-through text-[#a39c95]' : 'text-[#241f20]'}`}>
-                  {obj.title}
-                </span>
-                <Badge variant="outline" className="rounded-full text-xs">{formatPeriod(obj.period, obj.type)}</Badge>
-                <button onClick={() => removeObjective(obj.id)} className="text-[#a39c95] hover:text-[#ef4444] text-sm transition-colors">
-                  &times;
-                </button>
-              </Card>
+              <ObjectiveCard key={obj.id} obj={obj} onToggle={toggleDone} onRemove={removeObjective} />
             ))}
           </div>
         </div>
       )}
     </div>
+  )
+}
+
+function ObjectiveCard({ obj, onToggle, onRemove }: { obj: Objective; onToggle: (id: string) => void; onRemove: (id: string) => void }) {
+  const month = obj.type === 'mensuel'
+    ? MONTHS[parseInt(obj.period.split('-')[1]) - 1]
+    : `S${obj.period.split('W')[1]}`
+  const year = obj.period.split('-')[0]
+
+  return (
+    <Card className={`rounded-2xl border-0 shadow-sm transition-all hover:shadow-md overflow-hidden ${obj.done ? 'opacity-50' : ''}`}>
+      <div className="flex">
+        {/* Left date badge */}
+        <div className={`w-20 shrink-0 flex flex-col items-center justify-center py-4 ${
+          obj.done ? 'bg-[#a7abdd]/10' : 'bg-gradient-to-b from-[#f8571f]/8 to-[#a7abdd]/8'
+        }`}>
+          <span className={`text-lg font-bold ${obj.done ? 'text-[#a39c95]' : 'text-[#241f20]'}`}>
+            {month?.slice(0, 3)}
+          </span>
+          <span className="text-[10px] text-[#a39c95]">{year}</span>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 p-4 flex items-center gap-3">
+          <button onClick={() => onToggle(obj.id)} className="shrink-0">
+            {obj.done ? (
+              <CheckCircle2 className="h-6 w-6 text-[#f8571f]" />
+            ) : (
+              <Circle className="h-6 w-6 text-[#a39c95] hover:text-[#f8571f] transition-colors" />
+            )}
+          </button>
+          <div className="flex-1 min-w-0">
+            <p className={`font-semibold text-[15px] ${obj.done ? 'line-through text-[#a39c95]' : 'text-[#241f20]'}`}>
+              {obj.title}
+            </p>
+            {(obj.subtitle) && (
+              <p className={`text-sm mt-0.5 ${obj.done ? 'text-[#a39c95]' : 'text-[#6c6560]'}`}>
+                {obj.subtitle}
+              </p>
+            )}
+          </div>
+          <Badge className={`rounded-full text-[10px] border-0 shrink-0 ${
+            obj.type === 'mensuel' ? 'bg-[#f5f5f7] text-[#6c6560]' : 'bg-[#accce9]/20 text-[#241f20]'
+          }`}>
+            {obj.type === 'mensuel' ? 'Mensuel' : 'Hebdo'}
+          </Badge>
+          <button onClick={() => onRemove(obj.id)} className="text-[#a39c95] hover:text-[#ef4444] text-lg transition-colors shrink-0">
+            &times;
+          </button>
+        </div>
+      </div>
+    </Card>
   )
 }

@@ -22,17 +22,40 @@ export const STATUS_COLORS: Record<TaskStatus, string> = {
   bloque: 'bg-red-50 text-red-600',
 }
 
+export const PRIORITY_LABELS: Record<Priority, string> = {
+  haute: 'Haute',
+  moyenne: 'Moyenne',
+  basse: 'Basse',
+}
+
+export const PRIORITY_ORDER: Record<Priority, number> = {
+  haute: 0,
+  moyenne: 1,
+  basse: 2,
+}
+
 export interface SubTask {
   id: string
   title: string
+  description: string
   done: boolean
-  dueDate: string // mini deadline
+  dueDate: string
+  priority: Priority
+  assignee: string
+  notes: SubTaskNote[]
+}
+
+export interface SubTaskNote {
+  id: string
+  content: string
+  author: string
+  createdAt: string
 }
 
 export interface TaskAttachment {
   id: string
   name: string
-  url: string // data URL for uploaded files or external URL
+  url: string
   type: 'file' | 'link'
   addedAt: string
   addedBy: string
@@ -64,6 +87,7 @@ export interface Task {
 export interface Objective {
   id: string
   title: string
+  subtitle: string
   type: 'mensuel' | 'hebdo'
   period: string
   done: boolean
