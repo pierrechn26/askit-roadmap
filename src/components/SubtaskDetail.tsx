@@ -196,7 +196,7 @@ export function SubtaskDetail({ subtask, onUpdate, onClose, onDelete, members }:
                       <X className="h-2.5 w-2.5" />
                     </button>
                   </div>
-                  <p className="text-sm bg-[#f5f5f7] rounded-xl px-3 py-1.5 text-[#241f20]">{note.content}</p>
+                  <p className="text-sm bg-[#f5f5f7] rounded-xl px-3 py-1.5 text-[#241f20] whitespace-pre-wrap break-words">{note.content}</p>
                 </div>
               </div>
             ))}

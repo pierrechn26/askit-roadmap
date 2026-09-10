@@ -1,5 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
-import { Input } from '@/components/ui/input'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import type { TeamMember } from '@/types'
 
 interface Props {
@@ -16,13 +15,24 @@ export function MentionInput({ value, onChange, onSubmit, placeholder, members, 
   const [suggestions, setSuggestions] = useState<TeamMember[]>([])
   const [selectedIdx, setSelectedIdx] = useState(0)
   const [mentionStart, setMentionStart] = useState(-1)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Auto-resize
+  const autoResize = useCallback(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`
+  }, [])
 
   useEffect(() => {
-    // Detect @ pattern
-    const input = inputRef.current
-    if (!input) return
-    const cursorPos = input.selectionStart || value.length
+    autoResize()
+  }, [value, autoResize])
+
+  useEffect(() => {
+    const el = textareaRef.current
+    if (!el) return
+    const cursorPos = el.selectionStart || value.length
     const textBefore = value.slice(0, cursorPos)
     const atIdx = textBefore.lastIndexOf('@')
 
@@ -30,15 +40,17 @@ export function MentionInput({ value, onChange, onSubmit, placeholder, members, 
       const charBefore = atIdx > 0 ? textBefore[atIdx - 1] : ' '
       if (charBefore === ' ' || charBefore === '\n' || atIdx === 0) {
         const query = textBefore.slice(atIdx + 1).toLowerCase()
-        const filtered = members.filter((m) =>
-          m.name.toLowerCase().includes(query)
-        )
-        if (filtered.length > 0) {
-          setSuggestions(filtered)
-          setShowSuggestions(true)
-          setMentionStart(atIdx)
-          setSelectedIdx(0)
-          return
+        if (!query.includes(' ')) {
+          const filtered = members.filter((m) =>
+            m.name.toLowerCase().includes(query)
+          )
+          if (filtered.length > 0) {
+            setSuggestions(filtered)
+            setShowSuggestions(true)
+            setMentionStart(atIdx)
+            setSelectedIdx(0)
+            return
+          }
         }
       }
     }
@@ -46,25 +58,24 @@ export function MentionInput({ value, onChange, onSubmit, placeholder, members, 
   }, [value, members])
 
   function insertMention(member: TeamMember) {
+    const el = textareaRef.current
+    const cursorPos = el?.selectionStart || value.length
     const before = value.slice(0, mentionStart)
-    const input = inputRef.current
-    const cursorPos = input?.selectionStart || value.length
     const after = value.slice(cursorPos)
     const newValue = `${before}@${member.name} ${after}`
     onChange(newValue)
     setShowSuggestions(false)
 
-    // Focus back
     setTimeout(() => {
-      if (inputRef.current) {
+      if (textareaRef.current) {
         const pos = mentionStart + member.name.length + 2
-        inputRef.current.setSelectionRange(pos, pos)
-        inputRef.current.focus()
+        textareaRef.current.setSelectionRange(pos, pos)
+        textareaRef.current.focus()
       }
     }, 0)
   }
 
-  function handleKeyDown(e: React.KeyboardEvent) {
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (showSuggestions) {
       if (e.key === 'ArrowDown') {
         e.preventDefault()
@@ -85,21 +96,24 @@ export function MentionInput({ value, onChange, onSubmit, placeholder, members, 
         setShowSuggestions(false)
         return
       }
-    } else if (e.key === 'Enter') {
+    } else if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
       onSubmit()
     }
+    // Shift+Enter = new line (default behavior)
   }
 
   return (
     <div className="relative flex-1">
-      <Input
-        ref={inputRef}
+      <textarea
+        ref={textareaRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
         onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
         placeholder={placeholder}
-        className={className}
+        rows={1}
+        className={`flex w-full border border-input bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-none overflow-hidden ${className || ''}`}
       />
 
       {showSuggestions && (

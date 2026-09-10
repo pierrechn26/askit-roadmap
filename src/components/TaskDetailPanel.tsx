@@ -454,7 +454,7 @@ export function TaskDetailPanel({ task, open, onOpenChange, onTaskUpdate, member
                             <span className="text-[10px] text-[#a39c95]">{timeAgo(activity.createdAt)}</span>
                             <button onClick={() => removeActivity(activity.id)} className="ml-auto opacity-0 group-hover:opacity-100 text-[#a39c95] hover:text-red-500 transition-all"><X className="h-3 w-3" /></button>
                           </div>
-                          <div className={`text-sm rounded-xl px-3 py-2 ${
+                          <div className={`text-sm rounded-xl px-3 py-2 whitespace-pre-wrap break-words ${
                             activity.type === 'status_change' ? 'bg-[#f5f5f7] text-[#6c6560] italic'
                             : activity.type === 'document' ? 'bg-blue-50 text-[#241f20]'
                             : activity.type === 'mention' ? 'bg-[#f8571f]/5 text-[#241f20]'
