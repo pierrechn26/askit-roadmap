@@ -155,4 +155,21 @@ export const DEFAULT_DEALS: CrmDeal[] = [
     nextAction: 'R1 prévu',
     nextActionDate: '2026-09-11',
   },
+  {
+    id: 'nat-1',
+    company: 'La Bouclette',
+    contacts: [
+      { id: 'nat-1c', name: 'Cynthia', email: 'doucebarbe.bouclette@gmail.com', phone: '', linkedin: '' },
+    ],
+    amount: 0,
+    stage: 'r1',
+    notes: [
+      { id: 'nat-1n1', content: 'Site : la-bouclette.com\nProblématique principale : mise à jour du diagnostic.\nR1 démo planifiée le 14/09 à 15h (Google Meet) avec Pierre.', author: 'Pierre', createdAt: '2026-09-10T18:00:00Z' },
+    ],
+    source: 'Naturel',
+    createdAt: '2026-09-10',
+    closedAt: '',
+    nextAction: 'R1 démo Ask-it.ai',
+    nextActionDate: '2026-09-14',
+  },
 ]
