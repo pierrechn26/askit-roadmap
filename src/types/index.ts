@@ -82,6 +82,7 @@ export interface Task {
   activities: TaskActivity[]
   subtasks: SubTask[]
   attachments: TaskAttachment[]
+  objectiveIds: string[]
 }
 
 export const OBJECTIVE_CATEGORIES = [

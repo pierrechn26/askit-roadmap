@@ -10,9 +10,9 @@ import { Separator } from '@/components/ui/separator'
 import {
   Send, FileText, AtSign, StickyNote, Calendar, Tag, Users, X, Clock,
   Plus, CheckSquare, Square, Paperclip, Upload, Link2, Trash2,
-  ChevronRight,
+  ChevronRight, Target,
 } from 'lucide-react'
-import type { Task, TaskActivity, TaskStatus, Priority, TeamMember, SubTask, TaskAttachment } from '@/types'
+import type { Task, TaskActivity, TaskStatus, Priority, TeamMember, SubTask, TaskAttachment, Objective } from '@/types'
 import { STATUS_LABELS, STATUS_DOT, PRIORITY_LABELS, PRIORITY_ORDER } from '@/types'
 import { DEFAULT_CATEGORIES } from '@/data/defaults'
 import { notifyAssignment, notifyMention } from '@/lib/notifications'
@@ -50,9 +50,10 @@ interface Props {
   onOpenChange: (open: boolean) => void
   onTaskUpdate: (task: Task) => void
   members: TeamMember[]
+  objectives: Objective[]
 }
 
-export function TaskDetailPanel({ task, open, onOpenChange, onTaskUpdate, members }: Props) {
+export function TaskDetailPanel({ task, open, onOpenChange, onTaskUpdate, members, objectives }: Props) {
   const [newMessage, setNewMessage] = useState('')
   const [activityType, setActivityType] = useState<'note' | 'document' | 'mention'>('note')
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('')
@@ -289,6 +290,32 @@ export function TaskDetailPanel({ task, open, onOpenChange, onTaskUpdate, member
                     <Input type="date" value={task.dueDate} onChange={(e) => updateField('dueDate', e.target.value)} className="rounded-xl text-sm" />
                   </div>
                 </div>
+
+                {/* Linked objectives */}
+                {objectives.length > 0 && (
+                  <div>
+                    <label className="text-xs font-medium text-[#6c6560] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <Target className="h-3.5 w-3.5" /> Objectifs liés
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {objectives.map((obj) => {
+                        const linked = (task.objectiveIds || []).includes(obj.id)
+                        return (
+                          <button key={obj.id}
+                            onClick={() => {
+                              const current = task.objectiveIds || []
+                              updateField('objectiveIds', linked ? current.filter((id) => id !== obj.id) : [...current, obj.id])
+                            }}
+                            className={`px-2.5 py-1 rounded-full text-[11px] transition-all ${
+                              linked ? 'bg-[#241f20] text-white' : 'bg-[#f5f5f7] text-[#6c6560] hover:bg-[#eee]'
+                            }`}>
+                            {obj.title.length > 35 ? obj.title.slice(0, 35) + '…' : obj.title}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 <Separator />
 

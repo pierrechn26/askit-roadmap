@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Plus, Trash2, ArrowUpDown, MessageSquare, CheckSquare, Square, Paperclip, ChevronRight } from 'lucide-react'
-import type { Task, Priority, TaskStatus, TeamMember, SubTask } from '@/types'
+import type { Task, Priority, TaskStatus, TeamMember, SubTask, Objective } from '@/types'
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_ORDER } from '@/types'
 import { DEFAULT_CATEGORIES } from '@/data/defaults'
 import { notifyAssignment } from '@/lib/notifications'
@@ -27,14 +27,16 @@ interface Props {
   tasks: Task[]
   onTasksChange: (t: Task[]) => void
   members: TeamMember[]
+  objectives: Objective[]
   onTaskClick: (task: Task) => void
 }
 
-export function TaskTable({ tasks, onTasksChange, members, onTaskClick }: Props) {
+export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskClick }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [filterAssignee, setFilterAssignee] = useState<string>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([members[0]?.name || ''])
+  const [selectedObjectiveIds, setSelectedObjectiveIds] = useState<string[]>([])
 
   const [newTask, setNewTask] = useState<Partial<Task>>({
     title: '',
@@ -63,6 +65,7 @@ export function TaskTable({ tasks, onTasksChange, members, onTaskClick }: Props)
       activities: [],
       subtasks: [],
       attachments: [],
+      objectiveIds: selectedObjectiveIds,
     } as Task
     onTasksChange([...tasks, created])
 
@@ -77,6 +80,7 @@ export function TaskTable({ tasks, onTasksChange, members, onTaskClick }: Props)
       dueDate: '', priority: 'moyenne', status: 'a_faire', category: DEFAULT_CATEGORIES[0],
     })
     setSelectedAssignees([members[0]?.name || ''])
+    setSelectedObjectiveIds([])
     setDialogOpen(false)
   }
 
@@ -170,6 +174,29 @@ export function TaskTable({ tasks, onTasksChange, members, onTaskClick }: Props)
                   </SelectContent>
                 </Select>
               </div>
+              {/* Link to objectives */}
+              {objectives.length > 0 && (
+                <div>
+                  <label className="text-xs text-[#6c6560] mb-1.5 block">Lier à un objectif</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {objectives.map((obj) => {
+                      const selected = selectedObjectiveIds.includes(obj.id)
+                      return (
+                        <button key={obj.id} type="button"
+                          onClick={() => setSelectedObjectiveIds((prev) =>
+                            selected ? prev.filter((id) => id !== obj.id) : [...prev, obj.id]
+                          )}
+                          className={`px-2.5 py-1 rounded-full text-[11px] transition-all ${
+                            selected ? 'bg-[#241f20] text-white' : 'bg-[#f5f5f7] text-[#6c6560] hover:bg-[#eee]'
+                          }`}>
+                          {obj.title.length > 30 ? obj.title.slice(0, 30) + '…' : obj.title}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
               <Button onClick={addTask} className="w-full rounded-full bg-[#241f20] hover:bg-[#333] text-white">Ajouter</Button>
             </div>
           </DialogContent>

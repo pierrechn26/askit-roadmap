@@ -30,6 +30,7 @@ export const DEFAULT_TASKS: Task[] = [
     activities: [],
     subtasks: [],
     attachments: [],
+    objectiveIds: [],
   },
   {
     id: '2',
@@ -44,6 +45,7 @@ export const DEFAULT_TASKS: Task[] = [
     activities: [],
     subtasks: [],
     attachments: [],
+    objectiveIds: [],
   },
 ]
 
