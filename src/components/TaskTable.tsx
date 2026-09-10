@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Plus, Trash2, ArrowUpDown, MessageSquare, CheckSquare, Paperclip } from 'lucide-react'
-import type { Task, Priority, TaskStatus, TeamMember } from '@/types'
-import { STATUS_LABELS, STATUS_COLORS } from '@/types'
+import { Plus, Trash2, ArrowUpDown, MessageSquare, CheckSquare, Square, Paperclip, ChevronRight } from 'lucide-react'
+import type { Task, Priority, TaskStatus, TeamMember, SubTask } from '@/types'
+import { STATUS_LABELS, STATUS_COLORS, PRIORITY_ORDER } from '@/types'
 import { DEFAULT_CATEGORIES } from '@/data/defaults'
 import { notifyAssignment } from '@/lib/notifications'
 
@@ -15,6 +15,12 @@ const PRIORITY_COLORS: Record<Priority, string> = {
   haute: 'bg-[#f8571f]/10 text-[#f8571f] border-[#f8571f]/20',
   moyenne: 'bg-[#accce9]/30 text-[#241f20] border-[#accce9]/40',
   basse: 'bg-[#f5f5f7] text-[#6c6560] border-[#f5f5f7]',
+}
+
+const PRIORITY_BADGE_SMALL: Record<Priority, string> = {
+  haute: 'bg-[#f8571f]/10 text-[#f8571f]',
+  moyenne: 'bg-[#accce9]/20 text-[#241f20]',
+  basse: 'bg-[#f5f5f7] text-[#a39c95]',
 }
 
 interface Props {
@@ -26,7 +32,6 @@ interface Props {
 
 export function TaskTable({ tasks, onTasksChange, members, onTaskClick }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [sortBy, setSortBy] = useState<'dueDate' | 'priority' | 'assignee'>('dueDate')
   const [filterAssignee, setFilterAssignee] = useState<string>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([members[0]?.name || ''])
@@ -61,20 +66,15 @@ export function TaskTable({ tasks, onTasksChange, members, onTaskClick }: Props)
     } as Task
     onTasksChange([...tasks, created])
 
-    // Notify assignees
     selectedAssignees.forEach((name) => {
       const member = members.find((m) => m.name === name)
       if (member?.email) notifyAssignment(member, created)
     })
 
     setNewTask({
-      title: '',
-      description: '',
+      title: '', description: '',
       startDate: new Date().toISOString().slice(0, 10),
-      dueDate: '',
-      priority: 'moyenne',
-      status: 'a_faire',
-      category: DEFAULT_CATEGORIES[0],
+      dueDate: '', priority: 'moyenne', status: 'a_faire', category: DEFAULT_CATEGORIES[0],
     })
     setSelectedAssignees([members[0]?.name || ''])
     setDialogOpen(false)
@@ -84,24 +84,32 @@ export function TaskTable({ tasks, onTasksChange, members, onTaskClick }: Props)
     onTasksChange(tasks.map((t) => (t.id === id ? { ...t, status } : t)))
   }
 
+  function toggleSubtask(taskId: string, subtaskId: string) {
+    onTasksChange(tasks.map((t) => {
+      if (t.id !== taskId) return t
+      return {
+        ...t,
+        subtasks: (t.subtasks || []).map((s) =>
+          s.id === subtaskId ? { ...s, done: !s.done } : s
+        ),
+      }
+    }))
+  }
+
   function removeTask(id: string) {
     onTasksChange(tasks.filter((t) => t.id !== id))
   }
 
-  const priorityOrder: Record<Priority, number> = { haute: 0, moyenne: 1, basse: 2 }
-
   const memberColorMap: Record<string, string> = {}
   members.forEach((m) => { memberColorMap[m.name] = m.color })
 
+  // Filter
   let filtered = tasks
     .filter((t) => filterAssignee === 'all' || t.assignees.includes(filterAssignee))
     .filter((t) => filterStatus === 'all' || t.status === filterStatus)
 
-  filtered = [...filtered].sort((a, b) => {
-    if (sortBy === 'dueDate') return a.dueDate.localeCompare(b.dueDate)
-    if (sortBy === 'priority') return priorityOrder[a.priority] - priorityOrder[b.priority]
-    return (a.assignees[0] || '').localeCompare(b.assignees[0] || '')
-  })
+  // Sort by priority by default
+  filtered = [...filtered].sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority])
 
   return (
     <div className="space-y-4">
@@ -117,23 +125,17 @@ export function TaskTable({ tasks, onTasksChange, members, onTaskClick }: Props)
             <DialogHeader><DialogTitle className="text-[#241f20]">Nouvelle tâche</DialogTitle></DialogHeader>
             <div className="space-y-3 pt-2">
               <Input placeholder="Titre" className="rounded-xl" value={newTask.title} onChange={(e) => setNewTask({ ...newTask, title: e.target.value })} />
-
-              {/* Multi-select assignees */}
               <div>
                 <label className="text-xs text-[#6c6560] mb-1.5 block">Responsables</label>
                 <div className="flex flex-wrap gap-1.5">
                   {members.map((m) => {
                     const selected = selectedAssignees.includes(m.name)
                     return (
-                      <button
-                        key={m.name}
-                        type="button"
-                        onClick={() => toggleNewAssignee(m.name)}
+                      <button key={m.name} type="button" onClick={() => toggleNewAssignee(m.name)}
                         className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs transition-all ${
                           selected ? 'text-white' : 'bg-[#f5f5f7] text-[#6c6560] hover:bg-[#eee]'
                         }`}
-                        style={selected ? { backgroundColor: m.color } : undefined}
-                      >
+                        style={selected ? { backgroundColor: m.color } : undefined}>
                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: selected ? '#fff' : m.color }} />
                         {m.name}
                         {m.role === 'dev' && <span className="ml-0.5 opacity-70">DEV</span>}
@@ -142,7 +144,6 @@ export function TaskTable({ tasks, onTasksChange, members, onTaskClick }: Props)
                   })}
                 </div>
               </div>
-
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-xs text-[#a39c95] mb-1 block">Début</label>
@@ -191,100 +192,157 @@ export function TaskTable({ tasks, onTasksChange, members, onTaskClick }: Props)
             {Object.entries(STATUS_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
           </SelectContent>
         </Select>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          className="rounded-full text-[#6c6560]"
-          onClick={() => setSortBy(sortBy === 'dueDate' ? 'priority' : sortBy === 'priority' ? 'assignee' : 'dueDate')}
-        >
-          <ArrowUpDown className="h-4 w-4 mr-1" />
-          {sortBy === 'dueDate' ? 'Échéance' : sortBy === 'priority' ? 'Priorité' : 'Assigné'}
-        </Button>
       </div>
 
-      {/* Task list */}
-      <div className="space-y-2">
+      {/* Task list with inline subtasks */}
+      <div className="space-y-3">
         {filtered.length === 0 && (
           <p className="text-center text-[#a39c95] py-8">Aucune tâche</p>
         )}
         {filtered.map((task) => {
-          const subtasks = task.subtasks || []
+          const subtasks = [...(task.subtasks || [])].sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority])
           const attachments = task.attachments || []
           const stDone = subtasks.filter((s) => s.done).length
+
           return (
-            <Card
-              key={task.id}
-              className="p-3.5 rounded-2xl border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => onTaskClick(task)}
-            >
-              <div className="flex items-center gap-3 flex-wrap">
-                <div onClick={(e) => e.stopPropagation()}>
-                  <Select value={task.status} onValueChange={(v) => updateTaskStatus(task.id, v as TaskStatus)}>
-                    <SelectTrigger className={`w-[110px] h-7 text-xs rounded-full border-0 ${STATUS_COLORS[task.status]}`}>
-                      <span>{STATUS_LABELS[task.status]}</span>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(STATUS_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+            <div key={task.id}>
+              {/* Main task card */}
+              <Card
+                className="p-4 rounded-2xl border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => onTaskClick(task)}
+              >
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <Select value={task.status} onValueChange={(v) => updateTaskStatus(task.id, v as TaskStatus)}>
+                      <SelectTrigger className={`w-[110px] h-7 text-xs rounded-full border-0 ${STATUS_COLORS[task.status]}`}>
+                        <span>{STATUS_LABELS[task.status]}</span>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(STATUS_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <span className="flex-1 font-semibold min-w-[150px] text-[#241f20]">{task.title}</span>
+
+                  <div className="flex -space-x-1.5">
+                    {task.assignees.map((name) => (
+                      <div key={name} className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold border-2 border-white"
+                        style={{ backgroundColor: memberColorMap[name] || '#888' }} title={name}>
+                        {name.charAt(0).toUpperCase()}
+                      </div>
+                    ))}
+                  </div>
+
+                  <Badge variant="outline" className={`text-xs rounded-full border ${PRIORITY_COLORS[task.priority]}`}>
+                    {task.priority}
+                  </Badge>
+                  <Badge className="text-xs rounded-full bg-[#f5f5f7] text-[#6c6560] border-0">{task.category}</Badge>
+
+                  <span className="text-xs text-[#a39c95] whitespace-nowrap font-mono">
+                    {task.startDate} → {task.dueDate}
+                  </span>
+
+                  <div className="flex items-center gap-2">
+                    {subtasks.length > 0 && (
+                      <span className="flex items-center gap-0.5 text-[10px] text-[#a39c95]">
+                        <CheckSquare className="h-3 w-3" /> {stDone}/{subtasks.length}
+                      </span>
+                    )}
+                    {attachments.length > 0 && (
+                      <span className="flex items-center gap-0.5 text-[10px] text-[#a39c95]">
+                        <Paperclip className="h-3 w-3" /> {attachments.length}
+                      </span>
+                    )}
+                    {task.activities.length > 0 && (
+                      <span className="flex items-center gap-0.5 text-[10px] text-[#a39c95]">
+                        <MessageSquare className="h-3 w-3" /> {task.activities.length}
+                      </span>
+                    )}
+                  </div>
+
+                  <button onClick={(e) => { e.stopPropagation(); removeTask(task.id) }}
+                    className="text-[#a39c95] hover:text-[#ef4444] transition-colors">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
+              </Card>
 
-                <span className="flex-1 font-medium min-w-[150px] text-[#241f20]">{task.title}</span>
-
-                {/* Assignee avatars */}
-                <div className="flex -space-x-1.5">
-                  {task.assignees.map((name) => (
-                    <div
-                      key={name}
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold border-2 border-white"
-                      style={{ backgroundColor: memberColorMap[name] || '#888' }}
-                      title={name}
-                    >
-                      {name.charAt(0).toUpperCase()}
-                    </div>
+              {/* Inline subtasks */}
+              {subtasks.length > 0 && (
+                <div className="ml-6 mt-1 border-l-2 border-[rgba(36,31,32,0.06)] pl-4 space-y-0.5">
+                  {subtasks.map((st) => (
+                    <SubtaskRow
+                      key={st.id}
+                      subtask={st}
+                      taskId={task.id}
+                      memberColorMap={memberColorMap}
+                      onToggle={toggleSubtask}
+                      onClick={() => onTaskClick(task)}
+                    />
                   ))}
                 </div>
-
-                <Badge variant="outline" className={`text-xs rounded-full border ${PRIORITY_COLORS[task.priority]}`}>
-                  {task.priority}
-                </Badge>
-                <Badge className="text-xs rounded-full bg-[#f5f5f7] text-[#6c6560] border-0">{task.category}</Badge>
-
-                <span className="text-xs text-[#a39c95] whitespace-nowrap font-mono">
-                  {task.startDate} → {task.dueDate}
-                </span>
-
-                {/* Indicators */}
-                <div className="flex items-center gap-2">
-                  {subtasks.length > 0 && (
-                    <span className="flex items-center gap-0.5 text-[10px] text-[#a39c95]">
-                      <CheckSquare className="h-3 w-3" /> {stDone}/{subtasks.length}
-                    </span>
-                  )}
-                  {attachments.length > 0 && (
-                    <span className="flex items-center gap-0.5 text-[10px] text-[#a39c95]">
-                      <Paperclip className="h-3 w-3" /> {attachments.length}
-                    </span>
-                  )}
-                  {task.activities.length > 0 && (
-                    <span className="flex items-center gap-0.5 text-[10px] text-[#a39c95]">
-                      <MessageSquare className="h-3 w-3" /> {task.activities.length}
-                    </span>
-                  )}
-                </div>
-
-                <button
-                  onClick={(e) => { e.stopPropagation(); removeTask(task.id) }}
-                  className="text-[#a39c95] hover:text-[#ef4444] transition-colors"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            </Card>
+              )}
+            </div>
           )
         })}
       </div>
+    </div>
+  )
+}
+
+function SubtaskRow({ subtask, taskId, memberColorMap, onToggle, onClick }: {
+  subtask: SubTask
+  taskId: string
+  memberColorMap: Record<string, string>
+  onToggle: (taskId: string, subtaskId: string) => void
+  onClick: () => void
+}) {
+  const isOverdue = !subtask.done && subtask.dueDate && new Date(subtask.dueDate) < new Date()
+
+  return (
+    <div
+      className="group flex items-center gap-2 py-1.5 px-2.5 rounded-xl hover:bg-[#f5f5f7] cursor-pointer transition-colors"
+      onClick={onClick}
+    >
+      <button
+        onClick={(e) => { e.stopPropagation(); onToggle(taskId, subtask.id) }}
+        className="shrink-0"
+      >
+        {subtask.done ? (
+          <CheckSquare className="h-3.5 w-3.5 text-[#f8571f]" />
+        ) : (
+          <Square className="h-3.5 w-3.5 text-[#a39c95]" />
+        )}
+      </button>
+
+      <span className={`flex-1 text-sm ${subtask.done ? 'line-through text-[#a39c95]' : 'text-[#241f20]'}`}>
+        {subtask.title}
+      </span>
+
+      {/* Assignee mini avatars */}
+      {(subtask.assignees || []).length > 0 && (
+        <div className="flex -space-x-1 shrink-0">
+          {(subtask.assignees || []).map((name) => (
+            <div key={name} className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[7px] font-bold border border-white"
+              style={{ backgroundColor: memberColorMap[name] || '#888' }} title={name}>
+              {name.charAt(0)}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Badge className={`text-[8px] px-1 py-0 rounded-full border-0 shrink-0 ${PRIORITY_BADGE_SMALL[subtask.priority]}`}>
+        {subtask.priority.charAt(0).toUpperCase()}
+      </Badge>
+
+      {subtask.dueDate && (
+        <span className={`text-[10px] font-mono shrink-0 ${isOverdue ? 'text-red-500 font-medium' : 'text-[#a39c95]'}`}>
+          {subtask.dueDate.slice(5)}
+        </span>
+      )}
+
+      <ChevronRight className="h-3 w-3 text-[#a39c95] opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
     </div>
   )
 }

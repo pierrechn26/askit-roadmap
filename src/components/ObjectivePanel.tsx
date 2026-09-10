@@ -6,12 +6,45 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { CheckCircle2, Circle, Plus, Target, Trophy, Star, CalendarDays, CalendarClock } from 'lucide-react'
+import { startOfWeek, addDays, addWeeks, format, getISOWeek, startOfISOWeek } from 'date-fns'
+import { fr } from 'date-fns/locale'
 import type { Objective } from '@/types'
 
 const MONTHS = [
   'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
 ]
+
+function generateWeekOptions() {
+  const options: { value: string; label: string }[] = []
+  // Generate weeks from current week to end of 2026
+  const now = new Date()
+  const currentWeek = getISOWeek(now)
+  const currentYear = now.getFullYear()
+  // Start from current week, go to week 52
+  for (let w = currentWeek; w <= 52; w++) {
+    const weekStart = startOfISOWeek(new Date(currentYear, 0, 4 + (w - 1) * 7))
+    const weekEnd = addDays(weekStart, 6)
+    const val = `${currentYear}-W${w.toString().padStart(2, '0')}`
+    const label = `S${w} — ${format(weekStart, 'd MMM', { locale: fr })} au ${format(weekEnd, 'd MMM', { locale: fr })}`
+    options.push({ value: val, label })
+  }
+  return options
+}
+
+function formatWeekLabel(period: string): { short: string; detail: string } {
+  const match = period.match(/(\d{4})-W(\d{2})/)
+  if (!match) return { short: period, detail: '' }
+  const [, yearStr, weekStr] = match
+  const weekNum = parseInt(weekStr)
+  const year = parseInt(yearStr)
+  const weekStart = startOfISOWeek(new Date(year, 0, 4 + (weekNum - 1) * 7))
+  const weekEnd = addDays(weekStart, 6)
+  return {
+    short: `S${weekNum}`,
+    detail: `${format(weekStart, 'd MMM', { locale: fr })} – ${format(weekEnd, 'd MMM', { locale: fr })}`,
+  }
+}
 
 interface Props {
   clientCount: number
@@ -190,7 +223,14 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
                   </SelectContent>
                 </Select>
               ) : (
-                <Input placeholder="ex: 2026-W38" value={newPeriod} onChange={(e) => setNewPeriod(e.target.value)} className="rounded-xl" />
+                <Select value={newPeriod} onValueChange={setNewPeriod}>
+                  <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                  <SelectContent className="max-h-[250px]">
+                    {generateWeekOptions().map((w) => (
+                      <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
 
               <Button onClick={addObjective} className="w-full rounded-full bg-[#f8571f] hover:bg-[#e04d1a] text-white">
@@ -278,26 +318,27 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
 
 function ObjectiveCard({ obj, onToggle, onRemove }: { obj: Objective; onToggle: (id: string) => void; onRemove: (id: string) => void }) {
   const isMonthly = obj.type === 'mensuel'
-  let periodLabel = obj.period
+  let periodMain = ''
+  let periodSub = ''
 
   if (isMonthly) {
     const [y, m] = obj.period.split('-')
-    const monthName = MONTHS[parseInt(m) - 1]
-    periodLabel = `${monthName?.slice(0, 3)}`
-    var yearLabel = y
+    periodMain = MONTHS[parseInt(m) - 1]?.slice(0, 3) || ''
+    periodSub = y
   } else {
-    periodLabel = `S${obj.period.split('W')[1]}`
-    var yearLabel = obj.period.split('-')[0]
+    const week = formatWeekLabel(obj.period)
+    periodMain = week.short
+    periodSub = week.detail
   }
 
   return (
     <Card className={`rounded-2xl border-0 shadow-sm transition-all hover:shadow-md overflow-hidden ${obj.done ? 'opacity-50' : ''}`}>
       <div className="flex">
-        <div className={`w-20 shrink-0 flex flex-col items-center justify-center py-4 ${
+        <div className={`${isMonthly ? 'w-20' : 'w-28'} shrink-0 flex flex-col items-center justify-center py-4 px-2 ${
           obj.done ? 'bg-[#a7abdd]/10' : isMonthly ? 'bg-gradient-to-b from-[#f8571f]/8 to-[#a7abdd]/8' : 'bg-gradient-to-b from-[#accce9]/15 to-[#a7abdd]/8'
         }`}>
-          <span className={`text-lg font-bold ${obj.done ? 'text-[#a39c95]' : 'text-[#241f20]'}`}>{periodLabel}</span>
-          <span className="text-[10px] text-[#a39c95]">{yearLabel}</span>
+          <span className={`text-lg font-bold ${obj.done ? 'text-[#a39c95]' : 'text-[#241f20]'}`}>{periodMain}</span>
+          <span className="text-[9px] text-[#a39c95] text-center leading-tight">{periodSub}</span>
         </div>
         <div className="flex-1 p-4 flex items-center gap-3">
           <button onClick={() => onToggle(obj.id)} className="shrink-0">
