@@ -313,28 +313,31 @@ export function CrmPanel({ deals, onDealsChange }: Props) {
       </Card>
 
       {/* Pipeline Kanban */}
-      <div className="overflow-x-auto -mx-6 px-6">
-        <div className="flex gap-3" style={{ minWidth: `${CRM_STAGES.length * 220}px` }}>
+      <div className="overflow-x-auto -mx-6 px-6 pb-4">
+        <div className="flex gap-4" style={{ minWidth: `${CRM_STAGES.length * 240}px` }}>
           {CRM_STAGES.map((stage) => {
             const stageDeals = deals.filter((d) => d.stage === stage)
             const stageTotal = stageDeals.reduce((s, d) => s + d.amount, 0)
             return (
               <div
                 key={stage}
-                className="flex-1 min-w-[200px]"
+                className="flex-1 min-w-[220px]"
                 onDragOver={(e) => handleDragOver(e, stage)}
                 onDrop={() => handleDrop(stage)}
               >
                 {/* Column header */}
-                <div className="flex items-center gap-2 mb-2 px-1">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: CRM_STAGE_COLORS[stage] }} />
-                  <span className="text-xs font-medium text-[#241f20]">{CRM_STAGE_LABELS[stage]}</span>
-                  <Badge className="bg-[#f5f5f7] text-[#6c6560] border-0 rounded-full text-[10px] ml-auto">{stageDeals.length}</Badge>
+                <div className="flex items-center gap-2 mb-1 px-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CRM_STAGE_COLORS[stage] }} />
+                  <span className="text-sm font-semibold text-[#241f20]">{CRM_STAGE_LABELS[stage]}</span>
+                  <Badge className="bg-[#f5f5f7] text-[#241f20] border-0 rounded-full text-xs font-semibold ml-auto">{stageDeals.length}</Badge>
                 </div>
-                <p className="text-[10px] text-[#a39c95] px-1 mb-2">{fmt(stageTotal)} €/mois</p>
+                <p className="text-xs text-[#a39c95] px-2 mb-3">{fmt(stageTotal)} €/mois</p>
 
                 {/* Column body */}
-                <div className="space-y-2 min-h-[100px] bg-[#f5f5f7]/40 rounded-xl p-2">
+                <div className="space-y-2.5 min-h-[200px] bg-[#f5f5f7]/50 rounded-2xl p-3 border border-[rgba(36,31,32,0.04)]">
+                  {stageDeals.length === 0 && (
+                    <p className="text-xs text-[#a39c95] text-center py-8">Aucun deal</p>
+                  )}
                   {stageDeals.map((deal) => (
                     <DealCard
                       key={deal.id}
@@ -371,26 +374,29 @@ function DealCard({ deal, onDragStart, onClick }: { deal: CrmDeal; onDragStart: 
       draggable
       onDragStart={() => onDragStart(deal.id)}
       onClick={onClick}
-      className={`bg-white rounded-xl p-3 shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing ${
-        urg === 'overdue' ? 'ring-1 ring-red-300' : urg === 'urgent' ? 'ring-1 ring-[#f8571f]/30' : ''
+      className={`bg-white rounded-2xl p-4 shadow-sm hover:shadow-lg transition-all cursor-grab active:cursor-grabbing border border-[rgba(36,31,32,0.04)] ${
+        urg === 'overdue' ? 'ring-2 ring-red-400/50 border-red-200' : urg === 'urgent' ? 'ring-2 ring-[#f8571f]/30 border-[#f8571f]/20' : ''
       }`}
     >
-      <div className="flex items-start gap-2">
-        <GripVertical className="h-3.5 w-3.5 text-[#a39c95] mt-0.5 shrink-0 opacity-40" />
+      <div className="flex items-start gap-2.5">
+        <GripVertical className="h-4 w-4 text-[#a39c95] mt-0.5 shrink-0 opacity-30" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-[#241f20] truncate">{deal.company}</p>
-          <p className="text-xs text-[#a39c95] truncate">{deal.contact}</p>
+          <p className="text-[15px] font-semibold text-[#241f20] truncate leading-tight">{deal.company}</p>
+          <p className="text-sm text-[#6c6560] truncate mt-0.5">{deal.contact}</p>
           {deal.amount > 0 && (
-            <p className="text-xs font-semibold text-[#f8571f] mt-1">{deal.amount.toLocaleString('fr-FR')} €/m</p>
+            <p className="text-sm font-bold text-[#f8571f] mt-2">{deal.amount.toLocaleString('fr-FR')} €/mois</p>
           )}
-          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+          {deal.nextAction && (
+            <p className="text-xs text-[#a39c95] mt-1.5 truncate">{deal.nextAction}</p>
+          )}
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
             {deal.nextActionDate && (
-              <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${DATE_BADGE_STYLES[urg]}`}>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full ${DATE_BADGE_STYLES[urg]}`}>
                 {formatDateFR(deal.nextActionDate)}
               </span>
             )}
             {deal.source && (
-              <span className="text-[9px] text-[#a39c95]">{deal.source}</span>
+              <span className="text-[10px] text-[#a39c95] bg-[#f5f5f7] px-2 py-0.5 rounded-full">{deal.source}</span>
             )}
           </div>
         </div>
