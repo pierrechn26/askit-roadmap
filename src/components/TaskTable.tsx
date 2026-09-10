@@ -10,6 +10,7 @@ import type { Task, Priority, TaskStatus, TeamMember, SubTask, Objective } from 
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_ORDER } from '@/types'
 import { DEFAULT_CATEGORIES } from '@/data/defaults'
 import { notifyAssignment } from '@/lib/notifications'
+import { formatDateFR, getDateUrgency, DATE_BADGE_STYLES, CARD_BORDER_STYLES } from '@/lib/dates'
 
 const PRIORITY_COLORS: Record<Priority, string> = {
   haute: 'bg-[#f8571f]/10 text-[#f8571f] border-[#f8571f]/20',
@@ -231,11 +232,13 @@ export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskCli
           const attachments = task.attachments || []
           const stDone = subtasks.filter((s) => s.done).length
 
+          const urgency = getDateUrgency(task.dueDate, task.status === 'termine')
+
           return (
             <div key={task.id}>
               {/* Main task card */}
               <Card
-                className="p-4 rounded-2xl border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                className={`p-4 rounded-2xl border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer ${CARD_BORDER_STYLES[urgency]}`}
                 onClick={() => onTaskClick(task)}
               >
                 <div className="flex items-center gap-3 flex-wrap">
@@ -266,8 +269,8 @@ export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskCli
                   </Badge>
                   <Badge className="text-xs rounded-full bg-[#f5f5f7] text-[#6c6560] border-0">{task.category}</Badge>
 
-                  <span className="text-xs text-[#a39c95] whitespace-nowrap font-mono">
-                    {task.startDate} → {task.dueDate}
+                  <span className={`text-xs whitespace-nowrap px-2 py-0.5 rounded-full ${DATE_BADGE_STYLES[urgency]}`}>
+                    {formatDateFR(task.startDate)} → {formatDateFR(task.dueDate)}
                   </span>
 
                   <div className="flex items-center gap-2">
@@ -325,11 +328,13 @@ function SubtaskRow({ subtask, taskId, memberColorMap, onToggle, onClick }: {
   onToggle: (taskId: string, subtaskId: string) => void
   onClick: () => void
 }) {
-  const isOverdue = !subtask.done && subtask.dueDate && new Date(subtask.dueDate) < new Date()
+  const urgency = getDateUrgency(subtask.dueDate, subtask.done)
 
   return (
     <div
-      className="group flex items-center gap-2 py-1.5 px-2.5 rounded-xl hover:bg-[#f5f5f7] cursor-pointer transition-colors"
+      className={`group flex items-center gap-2 py-1.5 px-2.5 rounded-xl hover:bg-[#f5f5f7] cursor-pointer transition-colors ${
+        urgency === 'overdue' ? 'bg-red-50/50' : ''
+      }`}
       onClick={onClick}
     >
       <button
@@ -364,8 +369,8 @@ function SubtaskRow({ subtask, taskId, memberColorMap, onToggle, onClick }: {
       </Badge>
 
       {subtask.dueDate && (
-        <span className={`text-[10px] font-mono shrink-0 ${isOverdue ? 'text-red-500 font-medium' : 'text-[#a39c95]'}`}>
-          {subtask.dueDate.slice(5)}
+        <span className={`text-[10px] shrink-0 px-1.5 py-0.5 rounded-full ${DATE_BADGE_STYLES[urgency]}`}>
+          {formatDateFR(subtask.dueDate)}
         </span>
       )}
 

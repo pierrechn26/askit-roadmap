@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import type { SubTask, SubTaskNote, Priority, TeamMember } from '@/types'
 import { PRIORITY_LABELS } from '@/types'
+import { getDateUrgency } from '@/lib/dates'
 import { MentionInput } from './MentionInput'
 
 interface Props {
@@ -62,7 +63,9 @@ export function SubtaskDetail({ subtask, onUpdate, onClose, onDelete, members }:
     update('notes', (subtask.notes || []).filter((n) => n.id !== id))
   }
 
-  const isOverdue = !subtask.done && subtask.dueDate && new Date(subtask.dueDate) < new Date()
+  const urgency = getDateUrgency(subtask.dueDate, subtask.done)
+  const isOverdue = urgency === 'overdue'
+  const isUrgent = urgency === 'urgent'
   const memberColorMap: Record<string, string> = {}
   members.forEach((m) => { memberColorMap[m.name] = m.color })
 
@@ -147,7 +150,7 @@ export function SubtaskDetail({ subtask, onUpdate, onClose, onDelete, members }:
           </div>
           <div>
             <label className={`text-[10px] font-medium uppercase tracking-wider mb-1 flex items-center gap-1 ${
-              isOverdue ? 'text-red-500' : 'text-[#a39c95]'
+              isOverdue ? 'text-red-500' : isUrgent ? 'text-[#f8571f]' : 'text-[#a39c95]'
             }`}>
               <Calendar className="h-3 w-3" /> Échéance
             </label>
@@ -155,7 +158,7 @@ export function SubtaskDetail({ subtask, onUpdate, onClose, onDelete, members }:
               type="date"
               value={subtask.dueDate}
               onChange={(e) => update('dueDate', e.target.value)}
-              className={`h-8 rounded-lg text-xs ${isOverdue ? 'border-red-300 text-red-600' : ''}`}
+              className={`h-8 rounded-lg text-xs ${isOverdue ? 'border-red-300 text-red-600' : isUrgent ? 'border-[#f8571f]/40 text-[#f8571f]' : ''}`}
             />
           </div>
         </div>
@@ -166,7 +169,10 @@ export function SubtaskDetail({ subtask, onUpdate, onClose, onDelete, members }:
             <Badge className="bg-[#a7abdd]/20 text-[#241f20] border-0 rounded-full text-[10px]">Terminée</Badge>
           )}
           {isOverdue && (
-            <Badge className="bg-red-50 text-red-600 border-0 rounded-full text-[10px]">En retard</Badge>
+            <Badge className="bg-red-50 text-red-600 border border-red-300 rounded-full text-[10px]">En retard</Badge>
+          )}
+          {isUrgent && (
+            <Badge className="bg-[#f8571f]/10 text-[#f8571f] border border-[#f8571f]/30 rounded-full text-[10px]">Échéance proche</Badge>
           )}
         </div>
 

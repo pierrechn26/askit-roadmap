@@ -16,6 +16,7 @@ import type { Task, TaskActivity, TaskStatus, Priority, TeamMember, SubTask, Tas
 import { STATUS_LABELS, STATUS_DOT, PRIORITY_LABELS, PRIORITY_ORDER } from '@/types'
 import { DEFAULT_CATEGORIES } from '@/data/defaults'
 import { notifyAssignment, notifyMention } from '@/lib/notifications'
+import { formatDateFR, getDateUrgency, DATE_BADGE_STYLES } from '@/lib/dates'
 import { SubtaskDetail } from './SubtaskDetail'
 import { MentionInput } from './MentionInput'
 
@@ -341,11 +342,13 @@ export function TaskDetailPanel({ task, open, onOpenChange, onTaskUpdate, member
 
                   <div className="space-y-1">
                     {subtasks.map((st) => {
-                      const isOverdue = !st.done && st.dueDate && new Date(st.dueDate) < new Date()
+                      const stUrgency = getDateUrgency(st.dueDate, st.done)
                       return (
                         <div
                           key={st.id}
-                          className="group flex items-center gap-2 py-2 px-3 rounded-xl hover:bg-[#f5f5f7] cursor-pointer transition-colors"
+                          className={`group flex items-center gap-2 py-2 px-3 rounded-xl hover:bg-[#f5f5f7] cursor-pointer transition-colors ${
+                            stUrgency === 'overdue' ? 'bg-red-50/50' : ''
+                          }`}
                           onClick={() => setOpenSubtaskId(st.id)}
                         >
                           <button
@@ -391,8 +394,8 @@ export function TaskDetailPanel({ task, open, onOpenChange, onTaskUpdate, member
 
                           {/* Due date */}
                           {st.dueDate && (
-                            <span className={`text-[10px] font-mono shrink-0 ${isOverdue ? 'text-red-500 font-medium' : 'text-[#a39c95]'}`}>
-                              {st.dueDate.slice(5)}
+                            <span className={`text-[10px] shrink-0 px-1.5 py-0.5 rounded-full ${DATE_BADGE_STYLES[stUrgency]}`}>
+                              {formatDateFR(st.dueDate)}
                             </span>
                           )}
 
