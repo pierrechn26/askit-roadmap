@@ -7,14 +7,17 @@ import { TeamSettings } from '@/components/TeamSettings'
 import { TaskDetailPanel } from '@/components/TaskDetailPanel'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { DEFAULT_MEMBERS, DEFAULT_TASKS, DEFAULT_OBJECTIVES } from '@/data/defaults'
-import { LayoutDashboard, ListTodo, GanttChart, Users } from 'lucide-react'
+import { CrmPanel } from '@/components/CrmPanel'
+import { LayoutDashboard, ListTodo, GanttChart, Users, Briefcase } from 'lucide-react'
 import type { Task, Objective, TeamMember } from '@/types'
+import type { CrmDeal } from '@/types/crm'
 
 function App() {
   const [clientCount, setClientCount] = useLocalStorage('askit-v3-clients', 10)
   const [tasks, setTasks] = useLocalStorage<Task[]>('askit-v3-tasks', DEFAULT_TASKS)
   const [objectives, setObjectives] = useLocalStorage<Objective[]>('askit-v3-objectives', DEFAULT_OBJECTIVES)
   const [members, setMembers] = useLocalStorage<TeamMember[]>('askit-v3-members', DEFAULT_MEMBERS)
+  const [deals, setDeals] = useLocalStorage<CrmDeal[]>('askit-v3-deals', [])
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
@@ -68,6 +71,7 @@ function App() {
                 { value: 'roadmap', label: 'Roadmap', icon: <LayoutDashboard className="h-4 w-4" /> },
                 { value: 'tasks', label: 'Tâches', icon: <ListTodo className="h-4 w-4" /> },
                 { value: 'gantt', label: 'Timeline', icon: <GanttChart className="h-4 w-4" /> },
+                { value: 'crm', label: 'CRM', icon: <Briefcase className="h-4 w-4" /> },
                 { value: 'team', label: 'Équipe', icon: <Users className="h-4 w-4" /> },
               ].map((tab) => (
                 <TabsTrigger
@@ -108,6 +112,10 @@ function App() {
 
             <TabsContent value="gantt" className="mt-0">
               <GanttView tasks={tasks} members={members} onTaskClick={handleTaskClick} />
+            </TabsContent>
+
+            <TabsContent value="crm" className="mt-0">
+              <CrmPanel deals={deals} onDealsChange={setDeals} />
             </TabsContent>
 
             <TabsContent value="team" className="mt-0">
