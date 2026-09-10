@@ -14,8 +14,8 @@ export type CrmStage = typeof CRM_STAGES[number]
 
 export const CRM_STAGE_LABELS: Record<CrmStage, string> = {
   a_contacter: 'À contacter',
-  prospect_froid: 'Prospect froid',
-  prospect_chaud: 'Prospect chaud',
+  prospect_froid: 'Prospect froid (1er contact)',
+  prospect_chaud: 'Prospect chaud (échange en cours)',
   r1: 'R1',
   followup: 'Follow-up en cours',
   fantome: 'Fantôme',
