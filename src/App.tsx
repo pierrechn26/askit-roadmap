@@ -11,13 +11,14 @@ import { CrmPanel } from '@/components/CrmPanel'
 import { LayoutDashboard, ListTodo, GanttChart, Users, Briefcase } from 'lucide-react'
 import type { Task, Objective, TeamMember } from '@/types'
 import type { CrmDeal } from '@/types/crm'
+import { DEFAULT_DEALS } from '@/data/crm-defaults'
 
 function App() {
   const [clientCount, setClientCount] = useLocalStorage('askit-v3-clients', 10)
   const [tasks, setTasks] = useLocalStorage<Task[]>('askit-v3-tasks', DEFAULT_TASKS)
   const [objectives, setObjectives] = useLocalStorage<Objective[]>('askit-v3-objectives', DEFAULT_OBJECTIVES)
   const [members, setMembers] = useLocalStorage<TeamMember[]>('askit-v3-members', DEFAULT_MEMBERS)
-  const [deals, setDeals] = useLocalStorage<CrmDeal[]>('askit-v3-deals', [])
+  const [deals, setDeals] = useLocalStorage<CrmDeal[]>('askit-v4-deals', DEFAULT_DEALS)
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)

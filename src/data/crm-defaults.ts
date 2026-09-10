@@ -1,0 +1,141 @@
+import type { CrmDeal } from '@/types/crm'
+
+export const DEFAULT_DEALS: CrmDeal[] = [
+  {
+    id: 'nw-1',
+    company: 'Laboté',
+    contacts: [
+      { id: 'nw-1c', name: 'Sophie André-Miserey', email: 'sophie@labote.paris', phone: '', linkedin: '' },
+    ],
+    amount: 0,
+    stage: 'prospect_chaud',
+    notes: [
+      { id: 'nw-1n1', content: 'Email envoyé le 07/09, ouvert + clic sur le lien ask-it.ai le 08/09.\nPas de message LinkedIn possible (invitation de connexion en attente).\nA conseillé de tester ses diagnostics pendant l\'échange au salon ; intérêt data/CRM Klaviyo.', author: 'Pierre', createdAt: '2026-09-10T10:00:00Z' },
+    ],
+    source: 'Salon The New Well',
+    createdAt: '2026-09-07',
+    closedAt: '',
+    nextAction: 'Envoyer la relance email (brouillon prêt)',
+    nextActionDate: '2026-09-11',
+  },
+  {
+    id: 'nw-2',
+    company: 'Day+',
+    contacts: [
+      { id: 'nw-2c', name: 'Charlotte Brouard', email: 'charlotte@dayplus.fr', phone: '', linkedin: '' },
+    ],
+    amount: 0,
+    stage: 'prospect_froid',
+    notes: [
+      { id: 'nw-2n1', content: 'Email envoyé le 08/09, non ouvert (spam probable). Message LinkedIn envoyé le 09/09, sans réponse.\nInsatisfaite de son diagnostic actuel qui date ; potentiel refonte complète.', author: 'Pierre', createdAt: '2026-09-10T10:00:00Z' },
+    ],
+    source: 'Salon The New Well',
+    createdAt: '2026-09-08',
+    closedAt: '',
+    nextAction: 'Relance email si pas de réponse au DM LinkedIn',
+    nextActionDate: '2026-09-12',
+  },
+  {
+    id: 'nw-3',
+    company: 'Insentials',
+    contacts: [
+      { id: 'nw-3c', name: 'Marine Leroo', email: 'marine@insentials.com', phone: '', linkedin: '' },
+    ],
+    amount: 0,
+    stage: 'followup',
+    notes: [
+      { id: 'nw-3n1', content: 'Email envoyé le 07/09, non ouvert. Message LinkedIn envoyé le 09/09.\nA RÉPONDU les 09-10/09 : rediriger vers julie@insentials.com, ok pour dire qu\'on vient de sa part.\nLeader Belgique ; enjeu conversion marché France.', author: 'Pierre', createdAt: '2026-09-10T10:00:00Z' },
+    ],
+    source: 'Salon The New Well',
+    createdAt: '2026-09-07',
+    closedAt: '',
+    nextAction: 'Traité — voir prospect Julie Insentials',
+    nextActionDate: '',
+  },
+  {
+    id: 'nw-4',
+    company: 'Insentials (Julie)',
+    contacts: [
+      { id: 'nw-4c', name: 'Julie Van Weehaeghe', email: 'julie@insentials.com', phone: '', linkedin: '' },
+    ],
+    amount: 0,
+    stage: 'a_contacter',
+    notes: [
+      { id: 'nw-4n1', content: 'Recommandée par Marine Leroo le 10/09. Email d\'intro prêt en brouillon Gmail (de la part de Marine).\nPositionnement outil IA complet : diagnostic + page de recommandations + dashboard data.', author: 'Pierre', createdAt: '2026-09-10T10:00:00Z' },
+    ],
+    source: 'Recommandation Marine Leroo',
+    createdAt: '2026-09-10',
+    closedAt: '',
+    nextAction: 'Envoyer l\'email d\'intro',
+    nextActionDate: '2026-09-11',
+  },
+  {
+    id: 'nw-5',
+    company: 'Jia Paris',
+    contacts: [
+      { id: 'nw-5c', name: 'Aldjia Ait-Meddour', email: 'aldjia@jiaparis.com', phone: '', linkedin: '' },
+    ],
+    amount: 0,
+    stage: 'prospect_froid',
+    notes: [
+      { id: 'nw-5n1', content: 'Email envoyé le 07/09, probablement ouvert. Message LinkedIn envoyé le 10/09 à 16h08, sans réponse.\nEn pleine exploration des solutions du marché pour la refonte de son diagnostic ; sujets parcours + CRM.', author: 'Pierre', createdAt: '2026-09-10T10:00:00Z' },
+    ],
+    source: 'Salon The New Well',
+    createdAt: '2026-09-07',
+    closedAt: '',
+    nextAction: 'Relance email si pas de réponse d\'ici quelques jours',
+    nextActionDate: '2026-09-14',
+  },
+  {
+    id: 'nw-6',
+    company: 'Dix Hectares',
+    contacts: [
+      { id: 'nw-6c1', name: 'Chloé Lecocq', email: 'chloe@dixhectares.com', phone: '', linkedin: '' },
+      { id: 'nw-6c2', name: 'Sixtine Chauvin', email: 'sixtine@dixhectares.com', phone: '', linkedin: '' },
+    ],
+    amount: 0,
+    stage: 'prospect_froid',
+    notes: [
+      { id: 'nw-6n1', content: 'Email envoyé le 07/09 aux deux contacts, non ouvert. Message LinkedIn envoyé à Chloé le 10/09 à 9h43, sans réponse.\nPersonnalisation prévue roadmap 2027 ; forte exigence design et identité de marque.', author: 'Pierre', createdAt: '2026-09-10T10:00:00Z' },
+    ],
+    source: 'Salon The New Well',
+    createdAt: '2026-09-07',
+    closedAt: '',
+    nextAction: 'Relance email si pas de réponse',
+    nextActionDate: '2026-09-13',
+  },
+  {
+    id: 'nw-7',
+    company: 'The Smilist',
+    contacts: [
+      { id: 'nw-7c', name: 'François Bonnat', email: 'francois@thesmilist.co', phone: '', linkedin: '' },
+    ],
+    amount: 0,
+    stage: 'prospect_froid',
+    notes: [
+      { id: 'nw-7n1', content: 'Email envoyé le 07/09, non ouvert. Pas de DM LinkedIn possible (invitation en attente).\nDiagnostic existant de très bon niveau (co-construit avec une chirurgienne-dentiste) ; axes : expérience + data.', author: 'Pierre', createdAt: '2026-09-10T10:00:00Z' },
+    ],
+    source: 'Salon The New Well',
+    createdAt: '2026-09-07',
+    closedAt: '',
+    nextAction: 'Envoyer la relance email ; DM si invitation LinkedIn acceptée',
+    nextActionDate: '2026-09-12',
+  },
+  {
+    id: 'nw-8',
+    company: 'Aime / Ollie',
+    contacts: [
+      { id: 'nw-8c', name: 'Camille Bourland', email: 'camille.bourland@aime.co', phone: '', linkedin: '' },
+    ],
+    amount: 0,
+    stage: 'prospect_froid',
+    notes: [
+      { id: 'nw-8n1', content: 'Email envoyé le 07/09, non ouvert. Pas de DM LinkedIn possible (invitation en attente).\nDeux angles : lancement Ollie (univers enfance comme Ouate) et diagnostic existant chez Aime.', author: 'Pierre', createdAt: '2026-09-10T10:00:00Z' },
+    ],
+    source: 'Salon The New Well',
+    createdAt: '2026-09-07',
+    closedAt: '',
+    nextAction: 'Envoyer la relance email ; identifier qui gère le sujet côté Aime/Ollie',
+    nextActionDate: '2026-09-12',
+  },
+]
