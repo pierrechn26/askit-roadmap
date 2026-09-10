@@ -22,7 +22,7 @@ export function getDateUrgency(dateStr: string, done?: boolean): DateUrgency {
 export const DATE_BADGE_STYLES: Record<DateUrgency, string> = {
   overdue: 'bg-red-50 text-red-600 border border-red-300 font-semibold',
   urgent: 'bg-[#f8571f]/10 text-[#f8571f] border border-[#f8571f]/30 font-semibold',
-  normal: 'bg-[#f5f5f7] text-[#6c6560]',
+  normal: 'bg-emerald-50 text-emerald-600 border border-emerald-200',
 }
 
 export const CARD_BORDER_STYLES: Record<DateUrgency, string> = {
