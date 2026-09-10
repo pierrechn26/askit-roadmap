@@ -3,33 +3,28 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Calendar } from '@/components/ui/calendar'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { CheckCircle2, Circle, Plus, Target, Trophy, Star, CalendarDays, CalendarClock } from 'lucide-react'
-import { startOfWeek, addDays, addWeeks, format, getISOWeek, startOfISOWeek } from 'date-fns'
+import { CheckCircle2, Circle, Plus, Target, Trophy, Star, CalendarDays, CalendarClock, CalendarIcon } from 'lucide-react'
+import { addDays, format, getISOWeek, startOfISOWeek } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import type { Objective } from '@/types'
+import type { Objective, ObjectiveCategory } from '@/types'
+import { OBJECTIVE_CATEGORIES } from '@/types'
 
 const MONTHS = [
   'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
 ]
 
-function generateWeekOptions() {
-  const options: { value: string; label: string }[] = []
-  // Generate weeks from current week to end of 2026
-  const now = new Date()
-  const currentWeek = getISOWeek(now)
-  const currentYear = now.getFullYear()
-  // Start from current week, go to week 52
-  for (let w = currentWeek; w <= 52; w++) {
-    const weekStart = startOfISOWeek(new Date(currentYear, 0, 4 + (w - 1) * 7))
-    const weekEnd = addDays(weekStart, 6)
-    const val = `${currentYear}-W${w.toString().padStart(2, '0')}`
-    const label = `S${w} — ${format(weekStart, 'd MMM', { locale: fr })} au ${format(weekEnd, 'd MMM', { locale: fr })}`
-    options.push({ value: val, label })
-  }
-  return options
+const CATEGORY_COLORS: Record<ObjectiveCategory, string> = {
+  Global: 'bg-[#241f20] text-white',
+  Marketing: 'bg-[#f8571f]/10 text-[#f8571f]',
+  Produit: 'bg-[#a7abdd]/20 text-[#241f20]',
+  Commercial: 'bg-[#accce9]/20 text-[#241f20]',
+  Tech: 'bg-purple-100 text-purple-700',
+  Ops: 'bg-amber-100 text-amber-700',
 }
 
 function formatWeekLabel(period: string): { short: string; detail: string } {
@@ -46,6 +41,19 @@ function formatWeekLabel(period: string): { short: string; detail: string } {
   }
 }
 
+function getWeekFromDate(date: Date): string {
+  const week = getISOWeek(date)
+  const year = date.getFullYear()
+  return `${year}-W${week.toString().padStart(2, '0')}`
+}
+
+function getWeekRangeFromDate(date: Date): string {
+  const weekStart = startOfISOWeek(date)
+  const weekEnd = addDays(weekStart, 6)
+  const weekNum = getISOWeek(date)
+  return `Semaine ${weekNum} — du ${format(weekStart, 'd MMMM', { locale: fr })} au ${format(weekEnd, 'd MMMM', { locale: fr })}`
+}
+
 interface Props {
   clientCount: number
   onClientCountChange: (n: number) => void
@@ -58,15 +66,30 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
   const [newTitle, setNewTitle] = useState('')
   const [newSubtitle, setNewSubtitle] = useState('')
   const [newType, setNewType] = useState<'annuel' | 'mensuel' | 'hebdo'>('mensuel')
+  const [newCategory, setNewCategory] = useState<ObjectiveCategory>('Global')
   const [newPeriod, setNewPeriod] = useState('2026-10')
+  const [selectedWeekDate, setSelectedWeekDate] = useState<Date | undefined>(undefined)
   const [editingCount, setEditingCount] = useState(false)
 
   const target = 100
   const pct = Math.round((clientCount / target) * 100)
   const milestones = [{ value: 25, label: '25' }, { value: 50, label: '50' }, { value: 75, label: '75' }]
 
+  function handleTypeChange(type: 'annuel' | 'mensuel' | 'hebdo') {
+    setNewType(type)
+    if (type === 'annuel') setNewPeriod('2026')
+    else if (type === 'mensuel') setNewPeriod('2026-10')
+    else { setSelectedWeekDate(undefined); setNewPeriod('') }
+  }
+
+  function handleWeekDateSelect(date: Date | undefined) {
+    if (!date) return
+    setSelectedWeekDate(date)
+    setNewPeriod(getWeekFromDate(date))
+  }
+
   function addObjective() {
-    if (!newTitle.trim()) return
+    if (!newTitle.trim() || !newPeriod) return
     onObjectivesChange([
       ...objectives,
       {
@@ -74,12 +97,14 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
         title: newTitle.trim(),
         subtitle: newSubtitle.trim(),
         type: newType,
+        category: newCategory,
         period: newPeriod,
         done: false,
       },
     ])
     setNewTitle('')
     setNewSubtitle('')
+    setSelectedWeekDate(undefined)
     setDialogOpen(false)
   }
 
@@ -89,14 +114,6 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
 
   function removeObjective(id: string) {
     onObjectivesChange(objectives.filter((o) => o.id !== id))
-  }
-
-  // Default period when switching type
-  function handleTypeChange(type: 'annuel' | 'mensuel' | 'hebdo') {
-    setNewType(type)
-    if (type === 'annuel') setNewPeriod('2026')
-    else if (type === 'mensuel') setNewPeriod('2026-10')
-    else setNewPeriod('2026-W38')
   }
 
   const annual = objectives.filter((o) => o.type === 'annuel').sort((a, b) => a.period.localeCompare(b.period))
@@ -125,8 +142,7 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
                   <Input type="number" className="w-24 h-12 text-2xl font-bold rounded-xl" value={clientCount}
                     onChange={(e) => onClientCountChange(parseInt(e.target.value) || 0)}
                     onBlur={() => setEditingCount(false)}
-                    onKeyDown={(e) => e.key === 'Enter' && setEditingCount(false)}
-                    autoFocus />
+                    onKeyDown={(e) => e.key === 'Enter' && setEditingCount(false)} autoFocus />
                 ) : (
                   <span className="text-6xl font-bold text-[#f8571f] cursor-pointer hover:opacity-80 transition-opacity leading-none"
                     onClick={() => setEditingCount(true)}>{clientCount}</span>
@@ -145,7 +161,7 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
                   <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/25 to-transparent" />
                 </div>
                 {milestones.map((m) => (
-                  <div key={m.value} className="absolute top-0 bottom-0 flex items-center" style={{ left: `${m.value}%` }}>
+                  <div key={m.value} className="absolute top-0 bottom-0" style={{ left: `${m.value}%` }}>
                     <div className={`w-0.5 h-full ${pct >= m.value ? 'bg-white/40' : 'bg-[#241f20]/10'}`} />
                   </div>
                 ))}
@@ -163,7 +179,7 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
         </div>
       </Card>
 
-      {/* Add objective button — global */}
+      {/* Add objective button */}
       <div className="flex justify-end">
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
@@ -171,7 +187,7 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
               <Plus className="h-4 w-4 mr-1" /> Nouvel objectif
             </Button>
           </DialogTrigger>
-          <DialogContent className="rounded-2xl">
+          <DialogContent className="rounded-2xl max-w-md">
             <DialogHeader>
               <DialogTitle className="text-[#241f20]">Nouvel objectif</DialogTitle>
             </DialogHeader>
@@ -179,7 +195,25 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
               <Input placeholder="Titre de l'objectif" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} className="rounded-xl" />
               <Input placeholder="Sous-titre / description courte" value={newSubtitle} onChange={(e) => setNewSubtitle(e.target.value)} className="rounded-xl" />
 
-              {/* Type selector pills */}
+              {/* Category */}
+              <div>
+                <label className="text-xs text-[#6c6560] mb-2 block">Catégorie</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {OBJECTIVE_CATEGORIES.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setNewCategory(cat)}
+                      className={`px-3 py-1.5 rounded-full text-xs transition-all ${
+                        newCategory === cat ? CATEGORY_COLORS[cat] : 'bg-[#f5f5f7] text-[#6c6560] hover:bg-[#eee]'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Type */}
               <div>
                 <label className="text-xs text-[#6c6560] mb-2 block">Type d'objectif</label>
                 <div className="flex gap-2">
@@ -188,22 +222,17 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
                     { value: 'mensuel' as const, label: 'Mensuel', icon: <CalendarDays className="h-3.5 w-3.5" /> },
                     { value: 'hebdo' as const, label: 'Hebdomadaire', icon: <CalendarClock className="h-3.5 w-3.5" /> },
                   ]).map((t) => (
-                    <button
-                      key={t.value}
-                      onClick={() => handleTypeChange(t.value)}
+                    <button key={t.value} onClick={() => handleTypeChange(t.value)}
                       className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm transition-all ${
-                        newType === t.value
-                          ? 'bg-[#241f20] text-white'
-                          : 'bg-[#f5f5f7] text-[#6c6560] hover:bg-[#eee]'
-                      }`}
-                    >
+                        newType === t.value ? 'bg-[#241f20] text-white' : 'bg-[#f5f5f7] text-[#6c6560] hover:bg-[#eee]'
+                      }`}>
                       {t.icon} {t.label}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Period selector */}
+              {/* Period */}
               {newType === 'annuel' ? (
                 <Select value={newPeriod} onValueChange={setNewPeriod}>
                   <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
@@ -223,17 +252,38 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
                   </SelectContent>
                 </Select>
               ) : (
-                <Select value={newPeriod} onValueChange={setNewPeriod}>
-                  <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                  <SelectContent className="max-h-[250px]">
-                    {generateWeekOptions().map((w) => (
-                      <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="space-y-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start text-left rounded-xl h-10 font-normal">
+                        <CalendarIcon className="h-4 w-4 mr-2 text-[#a39c95]" />
+                        {selectedWeekDate ? (
+                          <span className="text-[#241f20]">{getWeekRangeFromDate(selectedWeekDate)}</span>
+                        ) : (
+                          <span className="text-[#a39c95]">Choisir une date pour sélectionner la semaine</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 rounded-xl" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={selectedWeekDate}
+                        onSelect={handleWeekDateSelect}
+                        locale={fr}
+                        defaultMonth={new Date()}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {selectedWeekDate && (
+                    <p className="text-xs text-[#6c6560] bg-[#f5f5f7] rounded-lg px-3 py-2">
+                      {getWeekRangeFromDate(selectedWeekDate)}
+                    </p>
+                  )}
+                </div>
               )}
 
-              <Button onClick={addObjective} className="w-full rounded-full bg-[#f8571f] hover:bg-[#e04d1a] text-white">
+              <Button onClick={addObjective} disabled={!newTitle.trim() || !newPeriod}
+                className="w-full rounded-full bg-[#f8571f] hover:bg-[#e04d1a] text-white">
                 Ajouter
               </Button>
             </div>
@@ -249,10 +299,7 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
           </h3>
           <div className="grid gap-3">
             {annual.map((obj) => (
-              <Card
-                key={obj.id}
-                className={`rounded-2xl border-0 overflow-hidden transition-all hover:shadow-md ${obj.done ? 'opacity-50' : 'shadow-[0_4px_20px_-4px_rgba(248,87,31,0.15)]'}`}
-              >
+              <Card key={obj.id} className={`rounded-2xl border-0 overflow-hidden transition-all hover:shadow-md ${obj.done ? 'opacity-50' : 'shadow-[0_4px_20px_-4px_rgba(248,87,31,0.15)]'}`}>
                 <div className="flex">
                   <div className={`w-24 shrink-0 flex flex-col items-center justify-center py-5 ${
                     obj.done ? 'bg-[#a7abdd]/10' : 'bg-gradient-to-b from-[#f8571f]/10 to-[#a7abdd]/10'
@@ -262,16 +309,15 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
                   </div>
                   <div className="flex-1 p-5 flex items-center gap-3">
                     <button onClick={() => toggleDone(obj.id)} className="shrink-0">
-                      {obj.done
-                        ? <CheckCircle2 className="h-7 w-7 text-[#f8571f]" />
-                        : <Circle className="h-7 w-7 text-[#a39c95] hover:text-[#f8571f] transition-colors" />
-                      }
+                      {obj.done ? <CheckCircle2 className="h-7 w-7 text-[#f8571f]" /> : <Circle className="h-7 w-7 text-[#a39c95] hover:text-[#f8571f] transition-colors" />}
                     </button>
                     <div className="flex-1 min-w-0">
                       <p className={`font-semibold text-base ${obj.done ? 'line-through text-[#a39c95]' : 'text-[#241f20]'}`}>{obj.title}</p>
                       {obj.subtitle && <p className={`text-sm mt-0.5 ${obj.done ? 'text-[#a39c95]' : 'text-[#6c6560]'}`}>{obj.subtitle}</p>}
                     </div>
-                    <Badge className="bg-[#f8571f]/10 text-[#f8571f] border-0 rounded-full text-[10px] shrink-0">Annuel</Badge>
+                    <Badge className={`rounded-full text-[10px] border-0 shrink-0 ${CATEGORY_COLORS[obj.category || 'Global']}`}>
+                      {obj.category || 'Global'}
+                    </Badge>
                     <button onClick={() => removeObjective(obj.id)} className="text-[#a39c95] hover:text-[#ef4444] text-lg transition-colors shrink-0">&times;</button>
                   </div>
                 </div>
@@ -290,9 +336,7 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
           <p className="text-sm text-[#a39c95] text-center py-4">Aucun objectif mensuel</p>
         ) : (
           <div className="grid gap-3">
-            {monthly.map((obj) => (
-              <ObjectiveCard key={obj.id} obj={obj} onToggle={toggleDone} onRemove={removeObjective} />
-            ))}
+            {monthly.map((obj) => <ObjectiveCard key={obj.id} obj={obj} onToggle={toggleDone} onRemove={removeObjective} />)}
           </div>
         )}
       </section>
@@ -306,9 +350,7 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
           <p className="text-sm text-[#a39c95] text-center py-4">Aucun objectif hebdomadaire</p>
         ) : (
           <div className="grid gap-3">
-            {weekly.map((obj) => (
-              <ObjectiveCard key={obj.id} obj={obj} onToggle={toggleDone} onRemove={removeObjective} />
-            ))}
+            {weekly.map((obj) => <ObjectiveCard key={obj.id} obj={obj} onToggle={toggleDone} onRemove={removeObjective} />)}
           </div>
         )}
       </section>
@@ -342,19 +384,14 @@ function ObjectiveCard({ obj, onToggle, onRemove }: { obj: Objective; onToggle: 
         </div>
         <div className="flex-1 p-4 flex items-center gap-3">
           <button onClick={() => onToggle(obj.id)} className="shrink-0">
-            {obj.done
-              ? <CheckCircle2 className="h-6 w-6 text-[#f8571f]" />
-              : <Circle className="h-6 w-6 text-[#a39c95] hover:text-[#f8571f] transition-colors" />
-            }
+            {obj.done ? <CheckCircle2 className="h-6 w-6 text-[#f8571f]" /> : <Circle className="h-6 w-6 text-[#a39c95] hover:text-[#f8571f] transition-colors" />}
           </button>
           <div className="flex-1 min-w-0">
             <p className={`font-semibold text-[15px] ${obj.done ? 'line-through text-[#a39c95]' : 'text-[#241f20]'}`}>{obj.title}</p>
             {obj.subtitle && <p className={`text-sm mt-0.5 ${obj.done ? 'text-[#a39c95]' : 'text-[#6c6560]'}`}>{obj.subtitle}</p>}
           </div>
-          <Badge className={`rounded-full text-[10px] border-0 shrink-0 ${
-            isMonthly ? 'bg-[#f5f5f7] text-[#6c6560]' : 'bg-[#accce9]/20 text-[#241f20]'
-          }`}>
-            {isMonthly ? 'Mensuel' : 'Hebdo'}
+          <Badge className={`rounded-full text-[10px] border-0 shrink-0 ${CATEGORY_COLORS[obj.category || 'Global']}`}>
+            {obj.category || 'Global'}
           </Badge>
           <button onClick={() => onRemove(obj.id)} className="text-[#a39c95] hover:text-[#ef4444] text-lg transition-colors shrink-0">&times;</button>
         </div>

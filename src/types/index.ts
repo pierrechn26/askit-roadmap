@@ -84,11 +84,23 @@ export interface Task {
   attachments: TaskAttachment[]
 }
 
+export const OBJECTIVE_CATEGORIES = [
+  'Global',
+  'Marketing',
+  'Produit',
+  'Commercial',
+  'Tech',
+  'Ops',
+] as const
+
+export type ObjectiveCategory = typeof OBJECTIVE_CATEGORIES[number]
+
 export interface Objective {
   id: string
   title: string
   subtitle: string
   type: 'annuel' | 'mensuel' | 'hebdo'
+  category: ObjectiveCategory
   period: string
   done: boolean
 }
