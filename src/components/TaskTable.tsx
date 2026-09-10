@@ -310,29 +310,24 @@ export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskCli
         {/* Separator */}
         <div className="w-px h-5 bg-[#241f20]/10" />
 
-        {/* Sort — single dropdown */}
-        <Select value={`${sortBy}-${sortAsc ? 'asc' : 'desc'}`} onValueChange={(v) => {
-          const [key, dir] = v.split('-') as [SortKey, string]
-          setSortBy(key)
-          setSortAsc(dir === 'asc')
-        }}>
-          <SelectTrigger className="h-7 rounded-full text-[12px] px-2.5 bg-[#f5f5f7] text-[#6c6560] w-auto gap-1">
-            <ArrowUpDown className="h-3 w-3" />
-            <span>Trier : {SORT_LABELS[sortBy]}</span>
-          </SelectTrigger>
-          <SelectContent>
-            {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
-              <SelectItem key={`${key}-asc`} value={`${key}-asc`}>
-                {SORT_LABELS[key]} ↑
-              </SelectItem>
-            ))}
-            {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
-              <SelectItem key={`${key}-desc`} value={`${key}-desc`}>
-                {SORT_LABELS[key]} ↓
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* Sort — toggle buttons, click again to reverse */}
+        <div className="flex items-center gap-1">
+          {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => {
+            const active = sortBy === key
+            return (
+              <button
+                key={key}
+                onClick={() => handleSortClick(key)}
+                className={`h-7 px-2.5 rounded-full text-[12px] flex items-center gap-1 transition-all ${
+                  active ? 'bg-[#241f20] text-white' : 'bg-[#f5f5f7] text-[#6c6560] hover:bg-[#eee]'
+                }`}
+              >
+                {SORT_LABELS[key]}
+                {active && <span className="text-[10px]">{sortAsc ? '↑' : '↓'}</span>}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* Results count */}
