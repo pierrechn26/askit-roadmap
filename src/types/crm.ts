@@ -47,6 +47,9 @@ export interface CrmDeal {
   id: string
   company: string
   contact: string
+  email: string
+  phone: string
+  linkedin: string
   amount: number
   stage: CrmStage
   notes: CrmNote[]

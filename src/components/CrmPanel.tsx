@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator'
 import {
   Plus, TrendingUp, Trophy, XCircle, Clock, CalendarClock, Send,
   ChevronUp, ChevronDown, GripVertical, AlertCircle, StickyNote, X,
+  Mail, Phone, ExternalLink,
 } from 'lucide-react'
 import { differenceInDays } from 'date-fns'
 import type { CrmDeal, CrmStage, CrmNote } from '@/types/crm'
@@ -33,7 +34,7 @@ export function CrmPanel({ deals, onDealsChange }: Props) {
 
   // New deal form
   const [form, setForm] = useState({
-    company: '', contact: '', amount: '', source: '', nextAction: '', nextActionDate: '',
+    company: '', contact: '', email: '', phone: '', linkedin: '', amount: '', source: '', nextAction: '', nextActionDate: '',
   })
 
   function createDeal() {
@@ -42,6 +43,9 @@ export function CrmPanel({ deals, onDealsChange }: Props) {
       id: Date.now().toString(),
       company: form.company.trim(),
       contact: form.contact.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim(),
+      linkedin: form.linkedin.trim(),
       amount: parseFloat(form.amount) || 0,
       stage: 'a_contacter',
       notes: [],
@@ -52,7 +56,7 @@ export function CrmPanel({ deals, onDealsChange }: Props) {
       nextActionDate: form.nextActionDate,
     }
     onDealsChange([...deals, deal])
-    setForm({ company: '', contact: '', amount: '', source: '', nextAction: '', nextActionDate: '' })
+    setForm({ company: '', contact: '', email: '', phone: '', linkedin: '', amount: '', source: '', nextAction: '', nextActionDate: '' })
     setCreateOpen(false)
   }
 
@@ -142,8 +146,15 @@ export function CrmPanel({ deals, onDealsChange }: Props) {
           <DialogContent className="rounded-2xl max-w-md">
             <DialogHeader><DialogTitle className="text-[#241f20]">Nouveau prospect</DialogTitle></DialogHeader>
             <div className="space-y-3 pt-2">
-              <Input placeholder="Entreprise" className="rounded-xl" value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} />
-              <Input placeholder="Contact" className="rounded-xl" value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} />
+              <div className="grid grid-cols-2 gap-2">
+                <Input placeholder="Entreprise" className="rounded-xl" value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} />
+                <Input placeholder="Nom du contact" className="rounded-xl" value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Input placeholder="Email" type="email" className="rounded-xl" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                <Input placeholder="Téléphone" type="tel" className="rounded-xl" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              </div>
+              <Input placeholder="URL LinkedIn" className="rounded-xl" value={form.linkedin} onChange={(e) => setForm({ ...form, linkedin: e.target.value })} />
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-xs text-[#a39c95] mb-1 block">Montant mensuel (€)</label>
@@ -468,6 +479,31 @@ function DealDetailSheet({ deal, open, onOpenChange, onUpdate, onDelete }: {
 
         <ScrollArea className="flex-1">
           <div className="px-6 py-4 space-y-5">
+            {/* Contact info */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Mail className="h-3.5 w-3.5 text-[#a39c95] shrink-0" />
+                <Input value={deal.email || ''} onChange={(e) => update('email', e.target.value)}
+                  placeholder="Email" type="email" className="rounded-lg text-sm h-8" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Phone className="h-3.5 w-3.5 text-[#a39c95] shrink-0" />
+                <Input value={deal.phone || ''} onChange={(e) => update('phone', e.target.value)}
+                  placeholder="Téléphone" type="tel" className="rounded-lg text-sm h-8" />
+              </div>
+              <div className="flex items-center gap-2">
+                <ExternalLink className="h-3.5 w-3.5 text-[#a39c95] shrink-0" />
+                <Input value={deal.linkedin || ''} onChange={(e) => update('linkedin', e.target.value)}
+                  placeholder="URL LinkedIn" className="rounded-lg text-sm h-8" />
+                {deal.linkedin && (
+                  <a href={deal.linkedin} target="_blank" rel="noopener noreferrer"
+                    className="text-[10px] text-[#f8571f] hover:underline shrink-0">Ouvrir</a>
+                )}
+              </div>
+            </div>
+
+            <Separator />
+
             {/* Amount + Source */}
             <div className="grid grid-cols-2 gap-3">
               <div>

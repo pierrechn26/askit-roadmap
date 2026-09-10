@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Plus, Trash2, ArrowUpDown, ArrowUp, ArrowDown, MessageSquare, CheckSquare, Square, Paperclip, ChevronRight, Filter, X } from 'lucide-react'
+import { Plus, Trash2, ArrowUpDown, MessageSquare, CheckSquare, Square, Paperclip, ChevronRight, Filter, X } from 'lucide-react'
 import type { Task, Priority, TaskStatus, TeamMember, SubTask, Objective } from '@/types'
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_ORDER } from '@/types'
 import { DEFAULT_CATEGORIES } from '@/data/defaults'
@@ -310,22 +310,29 @@ export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskCli
         {/* Separator */}
         <div className="w-px h-5 bg-[#241f20]/10" />
 
-        {/* Sort */}
-        <div className="flex items-center gap-1">
-          <ArrowUpDown className="h-3.5 w-3.5 text-[#a39c95]" />
-          {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
-            <button
-              key={key}
-              onClick={() => handleSortClick(key)}
-              className={`h-7 px-2 rounded-full text-[11px] flex items-center gap-0.5 transition-all ${
-                sortBy === key ? 'bg-[#241f20] text-white' : 'text-[#a39c95] hover:text-[#241f20] hover:bg-[#f5f5f7]'
-              }`}
-            >
-              {SORT_LABELS[key]}
-              {sortBy === key && (sortAsc ? <ArrowUp className="h-2.5 w-2.5" /> : <ArrowDown className="h-2.5 w-2.5" />)}
-            </button>
-          ))}
-        </div>
+        {/* Sort — single dropdown */}
+        <Select value={`${sortBy}-${sortAsc ? 'asc' : 'desc'}`} onValueChange={(v) => {
+          const [key, dir] = v.split('-') as [SortKey, string]
+          setSortBy(key)
+          setSortAsc(dir === 'asc')
+        }}>
+          <SelectTrigger className="h-7 rounded-full text-[12px] px-2.5 bg-[#f5f5f7] text-[#6c6560] w-auto gap-1">
+            <ArrowUpDown className="h-3 w-3" />
+            <span>Trier : {SORT_LABELS[sortBy]}</span>
+          </SelectTrigger>
+          <SelectContent>
+            {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
+              <SelectItem key={`${key}-asc`} value={`${key}-asc`}>
+                {SORT_LABELS[key]} ↑
+              </SelectItem>
+            ))}
+            {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
+              <SelectItem key={`${key}-desc`} value={`${key}-desc`}>
+                {SORT_LABELS[key]} ↓
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Results count */}
