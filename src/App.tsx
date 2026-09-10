@@ -71,8 +71,8 @@ function App() {
                 { value: 'roadmap', label: 'Roadmap', icon: <LayoutDashboard className="h-4 w-4" /> },
                 { value: 'tasks', label: 'Tâches', icon: <ListTodo className="h-4 w-4" /> },
                 { value: 'gantt', label: 'Timeline', icon: <GanttChart className="h-4 w-4" /> },
-                { value: 'crm', label: 'CRM', icon: <Briefcase className="h-4 w-4" /> },
                 { value: 'team', label: 'Équipe', icon: <Users className="h-4 w-4" /> },
+                { value: 'crm', label: 'CRM', icon: <Briefcase className="h-4 w-4" /> },
               ].map((tab) => (
                 <TabsTrigger
                   key={tab.value}

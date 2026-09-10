@@ -43,7 +43,7 @@ export function CrmPanel({ deals, onDealsChange }: Props) {
       company: form.company.trim(),
       contact: form.contact.trim(),
       amount: parseFloat(form.amount) || 0,
-      stage: 'prospect_froid',
+      stage: 'a_contacter',
       notes: [],
       source: form.source.trim(),
       createdAt: new Date().toISOString().slice(0, 10),
@@ -76,7 +76,7 @@ export function CrmPanel({ deals, onDealsChange }: Props) {
   }
 
   // --- KPIs ---
-  const activeStages: CrmStage[] = ['prospect_froid', 'prospect_chaud', 'r1', 'followup', 'fantome_valide']
+  const activeStages: CrmStage[] = ['a_contacter', 'prospect_froid', 'prospect_chaud', 'r1', 'followup', 'fantome', 'valide_attente']
   const pipelineDeals = deals.filter((d) => activeStages.includes(d.stage))
   const wonDeals = deals.filter((d) => d.stage === 'deal_gagne')
   const lostDeals = deals.filter((d) => d.stage === 'deal_perdu')
