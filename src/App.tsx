@@ -14,11 +14,11 @@ import type { CrmDeal } from '@/types/crm'
 import { DEFAULT_DEALS } from '@/data/crm-defaults'
 
 function App() {
-  const [clientCount, setClientCount] = useLocalStorage('askit-v3-clients', 10)
-  const [tasks, setTasks] = useLocalStorage<Task[]>('askit-v3-tasks', DEFAULT_TASKS)
-  const [objectives, setObjectives] = useLocalStorage<Objective[]>('askit-v3-objectives', DEFAULT_OBJECTIVES)
-  const [members, setMembers] = useLocalStorage<TeamMember[]>('askit-v3-members', DEFAULT_MEMBERS)
-  const [deals, setDeals] = useLocalStorage<CrmDeal[]>('askit-v6-deals', DEFAULT_DEALS)
+  const [clientCount, setClientCount] = useLocalStorage('askit-clients-v1', 10)
+  const [tasks, setTasks] = useLocalStorage<Task[]>('askit-tasks-v1', DEFAULT_TASKS)
+  const [objectives, setObjectives] = useLocalStorage<Objective[]>('askit-objectives-v1', DEFAULT_OBJECTIVES)
+  const [members, setMembers] = useLocalStorage<TeamMember[]>('askit-members-v1', DEFAULT_MEMBERS)
+  const [deals, setDeals] = useLocalStorage<CrmDeal[]>('askit-deals-v1', DEFAULT_DEALS)
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)

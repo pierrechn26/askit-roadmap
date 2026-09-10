@@ -54,6 +54,7 @@ export interface CrmContact {
 export interface CrmDeal {
   id: string
   company: string
+  website: string
   contacts: CrmContact[]
   amount: number
   stage: CrmStage

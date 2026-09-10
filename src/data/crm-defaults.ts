@@ -4,6 +4,7 @@ export const DEFAULT_DEALS: CrmDeal[] = [
   {
     id: 'nw-1',
     company: 'Laboté',
+    website: 'https://labote.paris',
     contacts: [
       { id: 'nw-1c', name: 'Sophie André-Miserey', email: 'sophie@labote.paris', phone: '', linkedin: '' },
     ],
@@ -21,6 +22,7 @@ export const DEFAULT_DEALS: CrmDeal[] = [
   {
     id: 'nw-2',
     company: 'Day+',
+    website: 'https://dayplus.fr',
     contacts: [
       { id: 'nw-2c', name: 'Charlotte Brouard', email: 'charlotte@dayplus.fr', phone: '', linkedin: '' },
     ],
@@ -38,6 +40,7 @@ export const DEFAULT_DEALS: CrmDeal[] = [
   {
     id: 'nw-3',
     company: 'Insentials',
+    website: 'https://insentials.com',
     contacts: [
       { id: 'nw-3c', name: 'Marine Leroo', email: 'marine@insentials.com', phone: '', linkedin: '' },
     ],
@@ -55,6 +58,7 @@ export const DEFAULT_DEALS: CrmDeal[] = [
   {
     id: 'nw-4',
     company: 'Insentials (Julie)',
+    website: 'https://insentials.com',
     contacts: [
       { id: 'nw-4c', name: 'Julie Van Weehaeghe', email: 'julie@insentials.com', phone: '', linkedin: '' },
     ],
@@ -72,6 +76,7 @@ export const DEFAULT_DEALS: CrmDeal[] = [
   {
     id: 'nw-5',
     company: 'Jia Paris',
+    website: 'https://jiaparis.com',
     contacts: [
       { id: 'nw-5c', name: 'Aldjia Ait-Meddour', email: 'aldjia@jiaparis.com', phone: '', linkedin: '' },
     ],
@@ -89,6 +94,7 @@ export const DEFAULT_DEALS: CrmDeal[] = [
   {
     id: 'nw-6',
     company: 'Dix Hectares',
+    website: 'https://dixhectares.com',
     contacts: [
       { id: 'nw-6c1', name: 'Chloé Lecocq', email: 'chloe@dixhectares.com', phone: '', linkedin: '' },
       { id: 'nw-6c2', name: 'Sixtine Chauvin', email: 'sixtine@dixhectares.com', phone: '', linkedin: '' },
@@ -107,6 +113,7 @@ export const DEFAULT_DEALS: CrmDeal[] = [
   {
     id: 'nw-7',
     company: 'The Smilist',
+    website: 'https://thesmilist.co',
     contacts: [
       { id: 'nw-7c', name: 'François Bonnat', email: 'francois@thesmilist.co', phone: '', linkedin: '' },
     ],
@@ -124,6 +131,7 @@ export const DEFAULT_DEALS: CrmDeal[] = [
   {
     id: 'nw-8',
     company: 'Aime / Ollie',
+    website: 'https://aime.co',
     contacts: [
       { id: 'nw-8c', name: 'Camille Bourland', email: 'camille.bourland@aime.co', phone: '', linkedin: '' },
     ],
@@ -141,6 +149,7 @@ export const DEFAULT_DEALS: CrmDeal[] = [
   {
     id: 'nw-9',
     company: 'Sova Care',
+    website: 'https://sova-care.com',
     contacts: [
       { id: 'nw-9c', name: 'Eva', email: 'eva@sova-care.com', phone: '', linkedin: 'https://www.linkedin.com/in/evalcq/' },
     ],
@@ -158,13 +167,14 @@ export const DEFAULT_DEALS: CrmDeal[] = [
   {
     id: 'nat-1',
     company: 'La Bouclette',
+    website: 'https://la-bouclette.com',
     contacts: [
       { id: 'nat-1c', name: 'Cynthia', email: 'doucebarbe.bouclette@gmail.com', phone: '', linkedin: '' },
     ],
     amount: 0,
     stage: 'r1',
     notes: [
-      { id: 'nat-1n1', content: 'Site : la-bouclette.com\nProblématique principale : mise à jour du diagnostic.\nR1 démo planifiée le 14/09 à 15h (Google Meet) avec Pierre.', author: 'Pierre', createdAt: '2026-09-10T18:00:00Z' },
+      { id: 'nat-1n1', content: 'Problématique principale : mise à jour du diagnostic.\nR1 démo planifiée le 14/09 à 15h (Google Meet) avec Pierre.', author: 'Pierre', createdAt: '2026-09-10T18:00:00Z' },
     ],
     source: 'Naturel',
     createdAt: '2026-09-10',
