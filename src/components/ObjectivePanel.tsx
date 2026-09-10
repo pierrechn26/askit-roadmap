@@ -63,10 +63,11 @@ interface Props {
   objectives: Objective[]
   onObjectivesChange: (o: Objective[]) => void
   tasks: Task[]
+  onTasksChange: (t: Task[]) => void
   onTaskClick: (task: Task) => void
 }
 
-export function ObjectivePanel({ clientCount, onClientCountChange, objectives, onObjectivesChange, tasks, onTaskClick }: Props) {
+export function ObjectivePanel({ clientCount, onClientCountChange, objectives, onObjectivesChange, tasks, onTasksChange, onTaskClick }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingObj, setEditingObj] = useState<Objective | null>(null)
   const [formTitle, setFormTitle] = useState('')
@@ -161,6 +162,24 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
 
   function getLinkedTasks(objId: string): Task[] {
     return tasks.filter((t) => (t.objectiveIds || []).includes(objId))
+  }
+
+  function getUnlinkedTasks(objId: string): Task[] {
+    return tasks.filter((t) => !(t.objectiveIds || []).includes(objId))
+  }
+
+  function linkTask(taskId: string, objId: string) {
+    onTasksChange(tasks.map((t) => {
+      if (t.id !== taskId) return t
+      return { ...t, objectiveIds: [...(t.objectiveIds || []), objId] }
+    }))
+  }
+
+  function unlinkTask(taskId: string, objId: string) {
+    onTasksChange(tasks.map((t) => {
+      if (t.id !== taskId) return t
+      return { ...t, objectiveIds: (t.objectiveIds || []).filter((id) => id !== objId) }
+    }))
   }
 
   const annual = objectives.filter((o) => o.type === 'annuel').sort((a, b) => a.period.localeCompare(b.period))
@@ -332,8 +351,9 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
           </h3>
           <div className="grid gap-3">
             {annual.map((obj) => (
-              <ObjectiveCard key={obj.id} obj={obj} linkedTasks={getLinkedTasks(obj.id)}
-                onToggle={toggleDone} onRemove={removeObjective} onEdit={openEditDialog} onTaskClick={onTaskClick} />
+              <ObjectiveCard key={obj.id} obj={obj} linkedTasks={getLinkedTasks(obj.id)} unlinkedTasks={getUnlinkedTasks(obj.id)}
+                onToggle={toggleDone} onRemove={removeObjective} onEdit={openEditDialog} onTaskClick={onTaskClick}
+                onLinkTask={linkTask} onUnlinkTask={unlinkTask} />
             ))}
           </div>
         </section>
@@ -349,8 +369,9 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
         ) : (
           <div className="grid gap-3">
             {monthly.map((obj) => (
-              <ObjectiveCard key={obj.id} obj={obj} linkedTasks={getLinkedTasks(obj.id)}
-                onToggle={toggleDone} onRemove={removeObjective} onEdit={openEditDialog} onTaskClick={onTaskClick} />
+              <ObjectiveCard key={obj.id} obj={obj} linkedTasks={getLinkedTasks(obj.id)} unlinkedTasks={getUnlinkedTasks(obj.id)}
+                onToggle={toggleDone} onRemove={removeObjective} onEdit={openEditDialog} onTaskClick={onTaskClick}
+                onLinkTask={linkTask} onUnlinkTask={unlinkTask} />
             ))}
           </div>
         )}
@@ -366,8 +387,9 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
         ) : (
           <div className="grid gap-3">
             {weekly.map((obj) => (
-              <ObjectiveCard key={obj.id} obj={obj} linkedTasks={getLinkedTasks(obj.id)}
-                onToggle={toggleDone} onRemove={removeObjective} onEdit={openEditDialog} onTaskClick={onTaskClick} />
+              <ObjectiveCard key={obj.id} obj={obj} linkedTasks={getLinkedTasks(obj.id)} unlinkedTasks={getUnlinkedTasks(obj.id)}
+                onToggle={toggleDone} onRemove={removeObjective} onEdit={openEditDialog} onTaskClick={onTaskClick}
+                onLinkTask={linkTask} onUnlinkTask={unlinkTask} />
             ))}
           </div>
         )}
@@ -376,10 +398,13 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
   )
 }
 
-function ObjectiveCard({ obj, linkedTasks, onToggle, onRemove, onEdit, onTaskClick }: {
-  obj: Objective; linkedTasks: Task[]; onToggle: (id: string) => void; onRemove: (id: string) => void;
-  onEdit: (obj: Objective) => void; onTaskClick: (task: Task) => void
+function ObjectiveCard({ obj, linkedTasks, unlinkedTasks, onToggle, onRemove, onEdit, onTaskClick, onLinkTask, onUnlinkTask }: {
+  obj: Objective; linkedTasks: Task[]; unlinkedTasks: Task[];
+  onToggle: (id: string) => void; onRemove: (id: string) => void;
+  onEdit: (obj: Objective) => void; onTaskClick: (task: Task) => void;
+  onLinkTask: (taskId: string, objId: string) => void; onUnlinkTask: (taskId: string, objId: string) => void;
 }) {
+  const [showTaskPicker, setShowTaskPicker] = useState(false)
   const isAnnual = obj.type === 'annuel'
   const isMonthly = obj.type === 'mensuel'
   let periodMain = ''
@@ -441,27 +466,65 @@ function ObjectiveCard({ obj, linkedTasks, onToggle, onRemove, onEdit, onTaskCli
             <button onClick={() => onRemove(obj.id)} className="text-[#a39c95] hover:text-[#ef4444] text-lg transition-colors shrink-0">&times;</button>
           </div>
 
-          {/* Linked tasks */}
-          {linkedTasks.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-[rgba(36,31,32,0.06)]">
-              <p className="text-[10px] uppercase tracking-wider text-[#a39c95] font-medium mb-1.5 flex items-center gap-1">
+          {/* Linked tasks + task management */}
+          <div className="mt-3 pt-3 border-t border-[rgba(36,31,32,0.06)]">
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-[10px] uppercase tracking-wider text-[#a39c95] font-medium flex items-center gap-1">
                 <ListTodo className="h-3 w-3" /> Tâches liées
+                {linkedTasks.length > 0 && <span className="text-[#6c6560]">({linkedTasks.length})</span>}
               </p>
-              <div className="space-y-1">
-                {linkedTasks.map((task) => (
-                  <button
-                    key={task.id}
-                    onClick={() => onTaskClick(task)}
-                    className="w-full flex items-center gap-2 py-1 px-2 rounded-lg hover:bg-[#f5f5f7] transition-colors text-left"
-                  >
-                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: STATUS_COLORS_TASK[task.status] || '#a39c95' }} />
-                    <span className="text-sm text-[#241f20] truncate flex-1">{task.title}</span>
-                    <span className="text-[10px] text-[#a39c95] font-mono shrink-0">{task.dueDate.slice(5)}</span>
-                  </button>
-                ))}
-              </div>
+              {unlinkedTasks.length > 0 && (
+                <button
+                  onClick={() => setShowTaskPicker(!showTaskPicker)}
+                  className="text-[10px] text-[#f8571f] hover:underline flex items-center gap-0.5"
+                >
+                  <Plus className="h-3 w-3" /> {showTaskPicker ? 'Fermer' : 'Lier une tâche'}
+                </button>
+              )}
             </div>
-          )}
+
+            {linkedTasks.length === 0 && !showTaskPicker && (
+              <p className="text-xs text-[#a39c95] py-1">Aucune tâche liée</p>
+            )}
+
+            <div className="space-y-0.5">
+              {linkedTasks.map((task) => (
+                <div key={task.id} className="group flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-[#f5f5f7] transition-colors">
+                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: STATUS_COLORS_TASK[task.status] || '#a39c95' }} />
+                  <button onClick={() => onTaskClick(task)} className="text-sm text-[#241f20] truncate flex-1 text-left hover:underline">
+                    {task.title}
+                  </button>
+                  <span className="text-[10px] text-[#a39c95] font-mono shrink-0">{task.dueDate.slice(5)}</span>
+                  <button
+                    onClick={() => onUnlinkTask(task.id, obj.id)}
+                    className="opacity-0 group-hover:opacity-100 text-[#a39c95] hover:text-red-500 transition-all text-[10px]"
+                    title="Délier"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Task picker dropdown */}
+            {showTaskPicker && unlinkedTasks.length > 0 && (
+              <div className="mt-2 border border-[rgba(36,31,32,0.08)] rounded-xl overflow-hidden">
+                <div className="max-h-[150px] overflow-y-auto">
+                  {unlinkedTasks.map((task) => (
+                    <button
+                      key={task.id}
+                      onClick={() => { onLinkTask(task.id, obj.id); if (unlinkedTasks.length <= 1) setShowTaskPicker(false) }}
+                      className="w-full flex items-center gap-2 py-2 px-3 hover:bg-[#f5f5f7] transition-colors text-left border-b border-[rgba(36,31,32,0.04)] last:border-0"
+                    >
+                      <Plus className="h-3 w-3 text-[#a39c95] shrink-0" />
+                      <span className="text-sm text-[#241f20] truncate flex-1">{task.title}</span>
+                      <span className="text-[10px] text-[#a39c95] font-mono shrink-0">{task.dueDate.slice(5)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </Card>
