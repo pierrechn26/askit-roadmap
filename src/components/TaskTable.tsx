@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Plus, Trash2, ArrowUpDown, MessageSquare, CheckSquare, Square, Paperclip, ChevronRight } from 'lucide-react'
+import { Plus, Trash2, ArrowUpDown, ArrowUp, ArrowDown, MessageSquare, CheckSquare, Square, Paperclip, ChevronRight, Filter, X } from 'lucide-react'
 import type { Task, Priority, TaskStatus, TeamMember, SubTask, Objective } from '@/types'
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_ORDER } from '@/types'
 import { DEFAULT_CATEGORIES } from '@/data/defaults'
@@ -32,10 +32,29 @@ interface Props {
   onTaskClick: (task: Task) => void
 }
 
+type SortKey = 'priority' | 'dueDate' | 'startDate' | 'status' | 'assignee' | 'category'
+
+const SORT_LABELS: Record<SortKey, string> = {
+  priority: 'Priorité',
+  dueDate: 'Échéance',
+  startDate: 'Date début',
+  status: 'Statut',
+  assignee: 'Assigné',
+  category: 'Catégorie',
+}
+
+const STATUS_ORDER: Record<TaskStatus, number> = {
+  bloque: 0, en_cours: 1, a_faire: 2, termine: 3,
+}
+
 export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskClick }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [filterAssignee, setFilterAssignee] = useState<string>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [filterPriority, setFilterPriority] = useState<string>('all')
+  const [filterCategory, setFilterCategory] = useState<string>('all')
+  const [sortBy, setSortBy] = useState<SortKey>('priority')
+  const [sortAsc, setSortAsc] = useState(true)
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([members[0]?.name || ''])
   const [selectedObjectiveIds, setSelectedObjectiveIds] = useState<string[]>([])
 
@@ -108,13 +127,42 @@ export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskCli
   const memberColorMap: Record<string, string> = {}
   members.forEach((m) => { memberColorMap[m.name] = m.color })
 
+  const allCategories = [...new Set(tasks.map((t) => t.category))].sort()
+
   // Filter
   let filtered = tasks
     .filter((t) => filterAssignee === 'all' || t.assignees.includes(filterAssignee))
     .filter((t) => filterStatus === 'all' || t.status === filterStatus)
+    .filter((t) => filterPriority === 'all' || t.priority === filterPriority)
+    .filter((t) => filterCategory === 'all' || t.category === filterCategory)
 
-  // Sort by priority by default
-  filtered = [...filtered].sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority])
+  // Sort
+  const dir = sortAsc ? 1 : -1
+  filtered = [...filtered].sort((a, b) => {
+    switch (sortBy) {
+      case 'priority': return (PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]) * dir
+      case 'dueDate': return a.dueDate.localeCompare(b.dueDate) * dir
+      case 'startDate': return a.startDate.localeCompare(b.startDate) * dir
+      case 'status': return (STATUS_ORDER[a.status] - STATUS_ORDER[b.status]) * dir
+      case 'assignee': return (a.assignees[0] || '').localeCompare(b.assignees[0] || '') * dir
+      case 'category': return a.category.localeCompare(b.category) * dir
+      default: return 0
+    }
+  })
+
+  const activeFilters = [filterAssignee, filterStatus, filterPriority, filterCategory].filter((f) => f !== 'all').length
+
+  function handleSortClick(key: SortKey) {
+    if (sortBy === key) setSortAsc(!sortAsc)
+    else { setSortBy(key); setSortAsc(true) }
+  }
+
+  function clearFilters() {
+    setFilterAssignee('all')
+    setFilterStatus('all')
+    setFilterPriority('all')
+    setFilterCategory('all')
+  }
 
   return (
     <div className="space-y-4">
@@ -203,23 +251,87 @@ export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskCli
           </DialogContent>
         </Dialog>
 
-        <Select value={filterAssignee} onValueChange={setFilterAssignee}>
-          <SelectTrigger className="w-[140px] h-8 rounded-full text-sm"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous</SelectItem>
-            {members.map((m) => <SelectItem key={m.name} value={m.name}>{m.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        {/* Separator */}
+        <div className="w-px h-5 bg-[#241f20]/10" />
 
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-[140px] h-8 rounded-full text-sm">
-            <span>{filterStatus === 'all' ? 'Tout statut' : STATUS_LABELS[filterStatus as TaskStatus]}</span>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tout statut</SelectItem>
-            {Object.entries(STATUS_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        {/* Filters */}
+        <div className="flex items-center gap-1.5">
+          <Filter className="h-3.5 w-3.5 text-[#a39c95]" />
+
+          <Select value={filterAssignee} onValueChange={setFilterAssignee}>
+            <SelectTrigger className={`h-7 rounded-full text-[12px] px-2.5 ${filterAssignee !== 'all' ? 'bg-[#241f20] text-white' : 'bg-[#f5f5f7] text-[#6c6560]'}`}>
+              <span>{filterAssignee === 'all' ? 'Assigné' : filterAssignee}</span>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous</SelectItem>
+              {members.map((m) => <SelectItem key={m.name} value={m.name}>{m.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className={`h-7 rounded-full text-[12px] px-2.5 ${filterStatus !== 'all' ? 'bg-[#241f20] text-white' : 'bg-[#f5f5f7] text-[#6c6560]'}`}>
+              <span>{filterStatus === 'all' ? 'Statut' : STATUS_LABELS[filterStatus as TaskStatus]}</span>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tout statut</SelectItem>
+              {Object.entries(STATUS_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          <Select value={filterPriority} onValueChange={setFilterPriority}>
+            <SelectTrigger className={`h-7 rounded-full text-[12px] px-2.5 ${filterPriority !== 'all' ? 'bg-[#f8571f] text-white' : 'bg-[#f5f5f7] text-[#6c6560]'}`}>
+              <span>{filterPriority === 'all' ? 'Priorité' : filterPriority.charAt(0).toUpperCase() + filterPriority.slice(1)}</span>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toute priorité</SelectItem>
+              <SelectItem value="haute">Haute</SelectItem>
+              <SelectItem value="moyenne">Moyenne</SelectItem>
+              <SelectItem value="basse">Basse</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={filterCategory} onValueChange={setFilterCategory}>
+            <SelectTrigger className={`h-7 rounded-full text-[12px] px-2.5 ${filterCategory !== 'all' ? 'bg-[#a7abdd] text-white' : 'bg-[#f5f5f7] text-[#6c6560]'}`}>
+              <span>{filterCategory === 'all' ? 'Catégorie' : filterCategory}</span>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toute catégorie</SelectItem>
+              {allCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          {activeFilters > 0 && (
+            <button onClick={clearFilters} className="h-7 px-2 rounded-full bg-red-50 text-red-500 text-[11px] flex items-center gap-1 hover:bg-red-100 transition-colors">
+              <X className="h-3 w-3" /> Effacer ({activeFilters})
+            </button>
+          )}
+        </div>
+
+        {/* Separator */}
+        <div className="w-px h-5 bg-[#241f20]/10" />
+
+        {/* Sort */}
+        <div className="flex items-center gap-1">
+          <ArrowUpDown className="h-3.5 w-3.5 text-[#a39c95]" />
+          {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
+            <button
+              key={key}
+              onClick={() => handleSortClick(key)}
+              className={`h-7 px-2 rounded-full text-[11px] flex items-center gap-0.5 transition-all ${
+                sortBy === key ? 'bg-[#241f20] text-white' : 'text-[#a39c95] hover:text-[#241f20] hover:bg-[#f5f5f7]'
+              }`}
+            >
+              {SORT_LABELS[key]}
+              {sortBy === key && (sortAsc ? <ArrowUp className="h-2.5 w-2.5" /> : <ArrowDown className="h-2.5 w-2.5" />)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Results count */}
+      <div className="flex items-center gap-2 text-xs text-[#a39c95]">
+        <span>{filtered.length} tâche{filtered.length > 1 ? 's' : ''}</span>
+        {activeFilters > 0 && <span>({activeFilters} filtre{activeFilters > 1 ? 's' : ''} actif{activeFilters > 1 ? 's' : ''})</span>}
       </div>
 
       {/* Task list with inline subtasks */}
