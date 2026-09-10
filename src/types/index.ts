@@ -41,7 +41,7 @@ export interface SubTask {
   done: boolean
   dueDate: string
   priority: Priority
-  assignee: string
+  assignees: string[]
   notes: SubTaskNote[]
 }
 

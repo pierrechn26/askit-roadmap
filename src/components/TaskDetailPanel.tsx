@@ -17,6 +17,7 @@ import { STATUS_LABELS, STATUS_DOT, PRIORITY_LABELS, PRIORITY_ORDER } from '@/ty
 import { DEFAULT_CATEGORIES } from '@/data/defaults'
 import { notifyAssignment, notifyMention } from '@/lib/notifications'
 import { SubtaskDetail } from './SubtaskDetail'
+import { MentionInput } from './MentionInput'
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -89,7 +90,7 @@ export function TaskDetailPanel({ task, open, onOpenChange, onTaskUpdate, member
       done: false,
       dueDate: task!.dueDate,
       priority: 'moyenne',
-      assignee: '',
+      assignees: [],
       notes: [],
     }
     updateField('subtasks', [...(task!.subtasks || []), st])
@@ -340,14 +341,19 @@ export function TaskDetailPanel({ task, open, onOpenChange, onTaskUpdate, member
                             )}
                           </div>
 
-                          {/* Assignee mini avatar */}
-                          {st.assignee && (
-                            <div
-                              className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[8px] font-bold shrink-0"
-                              style={{ backgroundColor: memberColorMap[st.assignee] || '#888' }}
-                              title={st.assignee}
-                            >
-                              {st.assignee.charAt(0)}
+                          {/* Assignee mini avatars */}
+                          {(st.assignees || []).length > 0 && (
+                            <div className="flex -space-x-1 shrink-0">
+                              {(st.assignees || []).map((name) => (
+                                <div
+                                  key={name}
+                                  className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[8px] font-bold border border-white"
+                                  style={{ backgroundColor: memberColorMap[name] || '#888' }}
+                                  title={name}
+                                >
+                                  {name.charAt(0)}
+                                </div>
+                              ))}
                             </div>
                           )}
 
@@ -482,10 +488,12 @@ export function TaskDetailPanel({ task, open, onOpenChange, onTaskUpdate, member
                 ))}
               </div>
               <div className="flex gap-2">
-                <Input
-                  placeholder={activityType === 'note' ? 'Écrire une note...' : activityType === 'document' ? 'Lien ou nom du document...' : 'Mentionner @quelqu\'un...'}
-                  value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && addActivity()}
+                <MentionInput
+                  value={newMessage}
+                  onChange={setNewMessage}
+                  onSubmit={addActivity}
+                  placeholder={activityType === 'note' ? 'Écrire une note... (@ pour mentionner)' : activityType === 'document' ? 'Lien ou nom du document...' : 'Tapez @ pour mentionner quelqu\'un...'}
+                  members={members}
                   className="rounded-full text-sm"
                 />
                 <Button size="sm" onClick={addActivity} disabled={!newMessage.trim()} className="rounded-full bg-[#f8571f] hover:bg-[#e04d1a] text-white px-4">

@@ -6,11 +6,12 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import {
-  ChevronLeft, CheckSquare, Square, Send, Calendar, Tag, User,
+  ChevronLeft, CheckSquare, Square, Send, Calendar, Tag, Users,
   StickyNote, X, Trash2,
 } from 'lucide-react'
 import type { SubTask, SubTaskNote, Priority, TeamMember } from '@/types'
 import { PRIORITY_LABELS } from '@/types'
+import { MentionInput } from './MentionInput'
 
 interface Props {
   subtask: SubTask
@@ -37,6 +38,14 @@ export function SubtaskDetail({ subtask, onUpdate, onClose, onDelete, members }:
     onUpdate({ ...subtask, [key]: value })
   }
 
+  function toggleAssignee(name: string) {
+    const current = subtask.assignees || []
+    const updated = current.includes(name)
+      ? current.filter((a) => a !== name)
+      : [...current, name]
+    update('assignees', updated)
+  }
+
   function addNote() {
     if (!newNote.trim()) return
     const note: SubTaskNote = {
@@ -54,20 +63,17 @@ export function SubtaskDetail({ subtask, onUpdate, onClose, onDelete, members }:
   }
 
   const isOverdue = !subtask.done && subtask.dueDate && new Date(subtask.dueDate) < new Date()
+  const memberColorMap: Record<string, string> = {}
+  members.forEach((m) => { memberColorMap[m.name] = m.color })
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
+      {/* Header — retour à gauche, titre au centre */}
       <div className="px-5 py-4 border-b border-[rgba(36,31,32,0.06)] flex items-center gap-3">
-        <button onClick={onClose} className="text-[#6c6560] hover:text-[#241f20] transition-colors">
+        <button onClick={onClose} className="text-[#6c6560] hover:text-[#241f20] transition-colors shrink-0">
           <ChevronLeft className="h-5 w-5" />
         </button>
-        <div className="flex-1">
-          <p className="text-[10px] uppercase tracking-wider text-[#a39c95] font-medium">Sous-tâche</p>
-        </div>
-        <button onClick={onDelete} className="text-[#a39c95] hover:text-red-500 transition-colors">
-          <Trash2 className="h-4 w-4" />
-        </button>
+        <p className="text-xs uppercase tracking-wider text-[#a39c95] font-medium flex-1">Sous-tâche</p>
       </div>
 
       {/* Content */}
@@ -98,25 +104,34 @@ export function SubtaskDetail({ subtask, onUpdate, onClose, onDelete, members }:
           className="min-h-[60px] rounded-xl resize-none text-sm"
         />
 
-        {/* Meta row */}
-        <div className="grid grid-cols-3 gap-2">
-          {/* Assignee */}
-          <div>
-            <label className="text-[10px] font-medium text-[#a39c95] uppercase tracking-wider mb-1 flex items-center gap-1">
-              <User className="h-3 w-3" /> Assigné
-            </label>
-            <Select value={subtask.assignee || ''} onValueChange={(v) => update('assignee', v)}>
-              <SelectTrigger className="h-8 rounded-lg text-xs">
-                <SelectValue placeholder="—" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Non assigné</SelectItem>
-                {members.map((m) => <SelectItem key={m.name} value={m.name}>{m.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+        {/* Assignees — multi select */}
+        <div>
+          <label className="text-[10px] font-medium text-[#a39c95] uppercase tracking-wider mb-2 flex items-center gap-1">
+            <Users className="h-3 w-3" /> Responsables
+          </label>
+          <div className="flex flex-wrap gap-1.5">
+            {members.map((m) => {
+              const selected = (subtask.assignees || []).includes(m.name)
+              return (
+                <button
+                  key={m.name}
+                  onClick={() => toggleAssignee(m.name)}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs transition-all ${
+                    selected ? 'text-white shadow-sm' : 'bg-[#f5f5f7] text-[#6c6560] hover:bg-[#eee]'
+                  }`}
+                  style={selected ? { backgroundColor: m.color } : undefined}
+                >
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: selected ? '#fff' : m.color }} />
+                  {m.name}
+                  {selected && <X className="h-2.5 w-2.5 ml-0.5" />}
+                </button>
+              )
+            })}
           </div>
+        </div>
 
-          {/* Priority */}
+        {/* Priority + Due date */}
+        <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-[10px] font-medium text-[#a39c95] uppercase tracking-wider mb-1 flex items-center gap-1">
               <Tag className="h-3 w-3" /> Priorité
@@ -130,8 +145,6 @@ export function SubtaskDetail({ subtask, onUpdate, onClose, onDelete, members }:
               </SelectContent>
             </Select>
           </div>
-
-          {/* Due date */}
           <div>
             <label className={`text-[10px] font-medium uppercase tracking-wider mb-1 flex items-center gap-1 ${
               isOverdue ? 'text-red-500' : 'text-[#a39c95]'
@@ -179,10 +192,7 @@ export function SubtaskDetail({ subtask, onUpdate, onClose, onDelete, members }:
                   <div className="flex items-center gap-2 mb-0.5">
                     <span className="text-[11px] font-medium text-[#241f20]">{note.author}</span>
                     <span className="text-[9px] text-[#a39c95]">{timeAgo(note.createdAt)}</span>
-                    <button
-                      onClick={() => removeNote(note.id)}
-                      className="ml-auto opacity-0 group-hover:opacity-100 text-[#a39c95] hover:text-red-500 transition-all"
-                    >
+                    <button onClick={() => removeNote(note.id)} className="ml-auto opacity-0 group-hover:opacity-100 text-[#a39c95] hover:text-red-500 transition-all">
                       <X className="h-2.5 w-2.5" />
                     </button>
                   </div>
@@ -192,15 +202,30 @@ export function SubtaskDetail({ subtask, onUpdate, onClose, onDelete, members }:
             ))}
           </div>
         </div>
+
+        <Separator />
+
+        {/* Delete — bien séparé en bas du contenu */}
+        <div className="pt-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onDelete}
+            className="w-full rounded-xl text-red-500 hover:text-red-600 hover:bg-red-50 text-xs flex items-center gap-1.5"
+          >
+            <Trash2 className="h-3.5 w-3.5" /> Supprimer cette sous-tâche
+          </Button>
+        </div>
       </div>
 
-      {/* Compose note */}
+      {/* Compose note with @ mention */}
       <div className="border-t border-[rgba(36,31,32,0.06)] p-4 flex gap-2">
-        <Input
-          placeholder="Ajouter une note..."
+        <MentionInput
           value={newNote}
-          onChange={(e) => setNewNote(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && addNote()}
+          onChange={setNewNote}
+          onSubmit={addNote}
+          placeholder="Ajouter une note... (@ pour mentionner)"
+          members={members}
           className="rounded-full text-sm"
         />
         <Button
