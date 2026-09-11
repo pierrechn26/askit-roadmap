@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Plus, Trash2, ArrowUpDown, MessageSquare, CheckSquare, Square, Paperclip, ChevronRight, Filter, X } from 'lucide-react'
+import { Plus, Trash2, ArrowUpDown, MessageSquare, CheckSquare, Square, Paperclip, ChevronRight, Filter, X, LayoutList, Bug } from 'lucide-react'
 import type { Task, Priority, TaskStatus, TeamMember, SubTask, Objective } from '@/types'
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_ORDER } from '@/types'
 import { DEFAULT_CATEGORIES } from '@/data/defaults'
@@ -50,15 +50,18 @@ const STATUS_ORDER: Record<TaskStatus, number> = {
 
 export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskClick }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [viewType, setViewType] = useState<'roadmap' | 'ticket'>('roadmap')
   const [filterAssignee, setFilterAssignee] = useState<string>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterPriority, setFilterPriority] = useState<string>('all')
   const [filterCategory, setFilterCategory] = useState<string>('all')
+  const [filterClient, setFilterClient] = useState<string>('all')
   const [sortBy, setSortBy] = useState<SortKey>('priority')
   const [sortAsc, setSortAsc] = useState(true)
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([members[0]?.name || ''])
   const [selectedObjectiveIds, setSelectedObjectiveIds] = useState<string[]>([])
 
+  const [newClient, setNewClient] = useState('')
   const [newTask, setNewTask] = useState<Partial<Task>>({
     title: '',
     description: '',
@@ -87,6 +90,8 @@ export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskCli
       subtasks: [],
       attachments: [],
       objectiveIds: selectedObjectiveIds,
+      taskType: viewType,
+      client: viewType === 'ticket' ? newClient.trim() : '',
     } as Task
     onTasksChange([...tasks, created])
 
@@ -102,6 +107,7 @@ export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskCli
     })
     setSelectedAssignees([members[0]?.name || ''])
     setSelectedObjectiveIds([])
+    setNewClient('')
     setDialogOpen(false)
   }
 
@@ -128,14 +134,17 @@ export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskCli
   const memberColorMap: Record<string, string> = {}
   members.forEach((m) => { memberColorMap[m.name] = m.color })
 
-  const allCategories = [...new Set(tasks.map((t) => t.category))].sort()
+  const viewTasks = tasks.filter((t) => (t.taskType || 'roadmap') === viewType)
+  const allCategories = [...new Set(viewTasks.map((t) => t.category))].sort()
+  const allClients = [...new Set(tasks.filter((t) => t.client).map((t) => t.client))].sort()
 
   // Filter
-  let filtered = tasks
+  let filtered = viewTasks
     .filter((t) => filterAssignee === 'all' || t.assignees.includes(filterAssignee))
     .filter((t) => filterStatus === 'all' || t.status === filterStatus)
     .filter((t) => filterPriority === 'all' || t.priority === filterPriority)
     .filter((t) => filterCategory === 'all' || t.category === filterCategory)
+    .filter((t) => filterClient === 'all' || t.client === filterClient)
 
   // Sort
   const dir = sortAsc ? 1 : -1
@@ -151,7 +160,7 @@ export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskCli
     }
   })
 
-  const activeFilters = [filterAssignee, filterStatus, filterPriority, filterCategory].filter((f) => f !== 'all').length
+  const activeFilters = [filterAssignee, filterStatus, filterPriority, filterCategory, filterClient].filter((f) => f !== 'all').length
 
   function handleSortClick(key: SortKey) {
     if (sortBy === key) setSortAsc(!sortAsc)
@@ -163,21 +172,50 @@ export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskCli
     setFilterStatus('all')
     setFilterPriority('all')
     setFilterCategory('all')
+    setFilterClient('all')
   }
 
   return (
     <div className="space-y-4">
-      {/* Toolbar */}
-      <div className="flex flex-wrap gap-3 items-center">
+      {/* Sub-tabs: Roadmap / Tickets Dev */}
+      <div className="flex items-center justify-between">
+        <div className="flex gap-1 bg-[#f5f5f7] rounded-full p-0.5">
+          <button
+            onClick={() => { setViewType('roadmap'); clearFilters() }}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              viewType === 'roadmap' ? 'bg-white text-[#241f20] shadow-sm' : 'text-[#a39c95] hover:text-[#241f20]'
+            }`}
+          >
+            <LayoutList className="h-4 w-4" /> Tâches Roadmap
+            <span className="text-[10px] bg-[#f5f5f7] text-[#6c6560] rounded-full px-1.5 py-0.5 ml-0.5">
+              {tasks.filter((t) => (t.taskType || 'roadmap') === 'roadmap').length}
+            </span>
+          </button>
+          <button
+            onClick={() => { setViewType('ticket'); clearFilters() }}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              viewType === 'ticket' ? 'bg-white text-[#241f20] shadow-sm' : 'text-[#a39c95] hover:text-[#241f20]'
+            }`}
+          >
+            <Bug className="h-4 w-4" /> Tickets Dev
+            <span className="text-[10px] bg-[#f5f5f7] text-[#6c6560] rounded-full px-1.5 py-0.5 ml-0.5">
+              {tasks.filter((t) => t.taskType === 'ticket').length}
+            </span>
+          </button>
+        </div>
+
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button size="sm" className="rounded-full bg-[#f8571f] hover:bg-[#e04d1a] text-white">
-              <Plus className="h-4 w-4 mr-1" /> Nouvelle tâche
+              <Plus className="h-4 w-4 mr-1" /> {viewType === 'ticket' ? 'Nouveau ticket' : 'Nouvelle tâche'}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md rounded-2xl">
-            <DialogHeader><DialogTitle className="text-[#241f20]">Nouvelle tâche</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle className="text-[#241f20]">{viewType === 'ticket' ? 'Nouveau ticket dev' : 'Nouvelle tâche'}</DialogTitle></DialogHeader>
             <div className="space-y-3 pt-2">
+              {viewType === 'ticket' && (
+                <Input placeholder="Client (ex: Baubo, Dermeden...)" className="rounded-xl" value={newClient} onChange={(e) => setNewClient(e.target.value)} />
+              )}
               <Input placeholder="Titre" className="rounded-xl" value={newTask.title} onChange={(e) => setNewTask({ ...newTask, title: e.target.value })} />
               <div>
                 <label className="text-xs text-[#6c6560] mb-1.5 block">Responsables</label>
@@ -301,6 +339,18 @@ export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskCli
             </SelectContent>
           </Select>
 
+          {viewType === 'ticket' && allClients.length > 0 && (
+            <Select value={filterClient} onValueChange={setFilterClient}>
+              <SelectTrigger className={`h-7 rounded-full text-[12px] px-2.5 ${filterClient !== 'all' ? 'bg-[#6366f1] text-white' : 'bg-[#f5f5f7] text-[#6c6560]'}`}>
+                <span>{filterClient === 'all' ? 'Client' : filterClient}</span>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tout client</SelectItem>
+                {allClients.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
+
           {activeFilters > 0 && (
             <button onClick={clearFilters} className="h-7 px-2 rounded-full bg-red-50 text-red-500 text-[11px] flex items-center gap-1 hover:bg-red-100 transition-colors">
               <X className="h-3 w-3" /> Effacer ({activeFilters})
@@ -377,7 +427,12 @@ export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskCli
                     </Select>
                   </div>
 
-                  <span className="flex-1 font-semibold min-w-[150px] text-[#241f20]">{task.title}</span>
+                  <div className="flex-1 min-w-[150px]">
+                    {task.client && (
+                      <span className="text-[10px] font-semibold text-[#6366f1] uppercase tracking-wider">{task.client}</span>
+                    )}
+                    <span className="font-semibold text-[#241f20] block">{task.title}</span>
+                  </div>
 
                   <div className="flex -space-x-1.5">
                     {task.assignees.map((name) => (

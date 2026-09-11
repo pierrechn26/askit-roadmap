@@ -30,6 +30,18 @@ function App() {
     }
   }, [])
 
+  // Auto-migrate tasks: add taskType/client fields if missing
+  useEffect(() => {
+    const needsMigration = tasks.some((t) => !t.taskType)
+    if (needsMigration) {
+      setTasks(tasks.map((t) => ({
+        ...t,
+        taskType: t.taskType || 'roadmap',
+        client: t.client || '',
+      })))
+    }
+  }, [])
+
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
 

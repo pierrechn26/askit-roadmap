@@ -69,6 +69,8 @@ export interface TaskActivity {
   createdAt: string
 }
 
+export type TaskType = 'roadmap' | 'ticket'
+
 export interface Task {
   id: string
   title: string
@@ -79,6 +81,8 @@ export interface Task {
   priority: Priority
   status: TaskStatus
   category: string
+  taskType: TaskType
+  client: string // for tickets: client name
   activities: TaskActivity[]
   subtasks: SubTask[]
   attachments: TaskAttachment[]
