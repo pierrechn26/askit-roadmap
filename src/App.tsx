@@ -20,6 +20,16 @@ function App() {
   const [members, setMembers] = useLocalStorage<TeamMember[]>('askit-members-v1', DEFAULT_MEMBERS)
   const [deals, setDeals] = useLocalStorage<CrmDeal[]>('askit-deals-v1', DEFAULT_DEALS)
 
+  // Auto-sync member colors from defaults (preserves emails and other edits)
+  useEffect(() => {
+    const colorMap: Record<string, string> = {}
+    DEFAULT_MEMBERS.forEach((m) => { colorMap[m.name] = m.color })
+    const needsUpdate = members.some((m) => colorMap[m.name] && m.color !== colorMap[m.name])
+    if (needsUpdate) {
+      setMembers(members.map((m) => colorMap[m.name] ? { ...m, color: colorMap[m.name] } : m))
+    }
+  }, [])
+
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
 
