@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ObjectivePanel } from '@/components/ObjectivePanel'
 import { TaskTable } from '@/components/TaskTable'
@@ -22,6 +22,26 @@ function App() {
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
+
+  // Parse URL to auto-open a task: ?tab=tasks&task=TASK_ID
+  const urlParams = new URLSearchParams(window.location.search)
+  const initialTab = urlParams.get('tab') || 'roadmap'
+  const [activeTab, setActiveTab] = useState(initialTab)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const taskId = params.get('task')
+    if (taskId && tasks.length > 0) {
+      const found = tasks.find((t) => t.id === taskId)
+      if (found) {
+        setActiveTab('tasks')
+        setSelectedTask(found)
+        setDetailOpen(true)
+        // Clean URL after opening
+        window.history.replaceState({}, '', window.location.pathname)
+      }
+    }
+  }, [tasks])
 
   function handleTaskClick(task: Task) {
     const latest = tasks.find((t) => t.id === task.id) || task
@@ -64,7 +84,7 @@ function App() {
 
       {/* Main content */}
       <main className="max-w-6xl mx-auto px-6 pt-0 pb-10">
-        <Tabs defaultValue="roadmap">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           {/* Navigation tabs — prominent, full-width bar */}
           <div className="border-b border-[rgba(36,31,32,0.08)] bg-white sticky top-0 z-20 -mx-6 px-6">
             <TabsList className="bg-transparent p-0 h-auto gap-0 border-0 justify-start w-full rounded-none">

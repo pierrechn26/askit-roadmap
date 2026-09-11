@@ -52,7 +52,7 @@ export function notifyAssignment(member: TeamMember, task: Task) {
        </p>
      </div>`,
     task.title,
-    `${APP_URL}/?tab=tasks`,
+    `${APP_URL}/?tab=tasks&task=${task.id}`,
   )
   sendEmail(member.email, `[AskIt] Tâche assignée : ${task.title}`, html)
 }
@@ -66,7 +66,7 @@ export function notifyMention(member: TeamMember, task: Task, message: string) {
        <p style="margin: 0; font-size: 14px; color: #241f20; white-space: pre-wrap;">${message}</p>
      </div>`,
     task.title,
-    `${APP_URL}/?tab=tasks`,
+    `${APP_URL}/?tab=tasks&task=${task.id}`,
   )
   sendEmail(member.email, `[AskIt] Vous avez été mentionné(e) : ${task.title}`, html)
 }
