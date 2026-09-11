@@ -16,7 +16,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const data = await resend.emails.send({
-      from: 'AskIt Roadmap <notifications@ask-it.ai>',
+      from: 'AskIt Roadmap <notifications@app.ask-it.ai>',
       to: Array.isArray(to) ? to : [to],
       subject,
       text: body,
