@@ -1,9 +1,9 @@
 import type { Task, Objective, TeamMember } from '@/types'
 
 export const DEFAULT_MEMBERS: TeamMember[] = [
-  { name: 'Pierre', email: '', color: '#f8571f', role: 'general' },
-  { name: 'Alice', email: '', color: '#accce9', role: 'general' },
-  { name: 'Bastien', email: '', color: '#a7abdd', role: 'dev' },
+  { name: 'Pierre', email: '', color: '#f8571f', role: 'general' },   // Orange AskIt
+  { name: 'Alice', email: '', color: '#10b981', role: 'general' },    // Vert émeraude
+  { name: 'Bastien', email: '', color: '#6366f1', role: 'dev' },      // Indigo
 ]
 
 export const DEFAULT_CATEGORIES = [

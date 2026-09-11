@@ -155,11 +155,10 @@ export function TaskDetailPanel({ task, open, onOpenChange, onTaskUpdate, member
       author: 'Pierre', createdAt: new Date().toISOString(),
     }
     updateField('activities', [...task!.activities, activity])
-    if (activityType === 'mention') {
-      members.forEach((m) => {
-        if (newMessage.includes(`@${m.name}`) && m.email) notifyMention(m, task!, newMessage)
-      })
-    }
+    // Notify any @mentioned members regardless of activity type
+    members.forEach((m) => {
+      if (newMessage.includes(`@${m.name}`) && m.email) notifyMention(m, task!, newMessage)
+    })
     setNewMessage('')
   }
 
