@@ -31,8 +31,9 @@ export function LoginPage({ onLogin }: Props) {
       } else {
         onLogin(data.token, data.user)
       }
-    } catch {
-      setError('Erreur réseau')
+    } catch (e: any) {
+      console.error('Login error:', e)
+      setError('Erreur réseau : ' + (e?.message || 'impossible de contacter le serveur'))
     } finally {
       setLoading(false)
     }

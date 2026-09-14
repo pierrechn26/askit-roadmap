@@ -36,9 +36,17 @@ function App() {
   // Verify token on load
   useEffect(() => {
     if (!authToken) { setAuthChecked(true); return }
-    fetch('/api/auth/verify', { headers: { Authorization: `Bearer ${authToken}` } })
-      .then((r) => { if (!r.ok) { setAuthToken(null); setAuthUser(null) }; setAuthChecked(true) })
-      .catch(() => { setAuthToken(null); setAuthUser(null); setAuthChecked(true) })
+    try {
+      // Verify token locally first (check expiry)
+      const base64Part = authToken.split('.')[0]
+      const data = JSON.parse(atob(base64Part))
+      if (data.exp < Date.now()) {
+        setAuthToken(null); setAuthUser(null)
+      }
+    } catch {
+      setAuthToken(null); setAuthUser(null)
+    }
+    setAuthChecked(true)
   }, [])
 
   // Auto-sync member colors
