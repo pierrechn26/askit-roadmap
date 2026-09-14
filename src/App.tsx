@@ -203,7 +203,7 @@ function App() {
       {/* Main */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         {/* Tab nav — sticky, full width */}
-        <div className="border-b border-[rgba(36,31,32,0.08)] bg-white sticky top-0 z-20">
+        <div className="border-b border-[rgba(36,31,32,0.08)] bg-white sticky top-0 z-20 w-full">
           <div className="max-w-6xl mx-auto px-6">
             <TabsList className="bg-transparent p-0 h-auto gap-0 border-0 justify-start w-full rounded-none">
               {[
@@ -234,7 +234,7 @@ function App() {
         </div>
 
         {/* Tab content */}
-        <main className="max-w-6xl mx-auto px-6 pt-6 pb-10">
+        <main className="max-w-6xl mx-auto px-6 pt-6 pb-10 w-full">
             <TabsContent value="roadmap" className="mt-0">
               <ObjectivePanel
                 clientCount={clientCount}
