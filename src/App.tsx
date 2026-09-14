@@ -49,14 +49,50 @@ function App() {
     setAuthChecked(true)
   }, [])
 
-  // Auto-sync member colors
+  // Auto-sync member colors + sync invited users into team members
   useEffect(() => {
+    // Fix colors from defaults
     const colorMap: Record<string, string> = {}
     DEFAULT_MEMBERS.forEach((m) => { colorMap[m.name] = m.color })
-    const needsUpdate = members.some((m) => colorMap[m.name] && m.color !== colorMap[m.name])
-    if (needsUpdate) {
-      setMembers(members.map((m) => colorMap[m.name] ? { ...m, color: colorMap[m.name] } : m))
-    }
+    let updated = members.map((m) => colorMap[m.name] ? { ...m, color: colorMap[m.name] } : m)
+
+    // Fetch registered users from DB and add missing ones to team
+    fetch('/api/auth/list-users')
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.users) return
+        const existingNames = new Set(updated.map((m) => m.name.toLowerCase()))
+        const COLORS = ['#f8571f', '#10b981', '#6366f1', '#ec4899', '#06b6d4', '#f59e0b', '#8b5cf6', '#84cc16']
+        let changed = false
+        for (const u of data.users) {
+          if (!existingNames.has(u.name.toLowerCase())) {
+            updated = [...updated, {
+              name: u.name,
+              email: u.email,
+              color: COLORS[updated.length % COLORS.length],
+              role: u.role === 'dev' ? 'dev' as const : 'general' as const,
+            }]
+            changed = true
+          }
+        }
+        // Also sync emails for existing members
+        for (const u of data.users) {
+          const idx = updated.findIndex((m) => m.name.toLowerCase() === u.name.toLowerCase())
+          if (idx >= 0 && !updated[idx].email && u.email) {
+            updated = updated.map((m, i) => i === idx ? { ...m, email: u.email } : m)
+            changed = true
+          }
+        }
+        if (changed || members.some((m, i) => m.color !== updated[i]?.color)) {
+          setMembers(updated)
+        }
+      })
+      .catch(() => {
+        // Still apply color fixes even if fetch fails
+        if (members.some((m) => colorMap[m.name] && m.color !== colorMap[m.name])) {
+          setMembers(updated)
+        }
+      })
   }, [])
 
   // Auto-migrate tasks
@@ -130,7 +166,7 @@ function App() {
   const isAdmin = authUser.role === 'admin'
 
   return (
-    <div className="min-h-screen bg-[#fdfcfc] overflow-x-hidden max-w-[100vw]">
+    <div className="min-h-screen bg-[#fdfcfc] w-full">
       {/* Header */}
       <header className="bg-white border-b border-[rgba(36,31,32,0.08)]">
         <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
