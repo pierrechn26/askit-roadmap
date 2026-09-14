@@ -130,7 +130,7 @@ function App() {
   const isAdmin = authUser.role === 'admin'
 
   return (
-    <div className="min-h-screen bg-[#fdfcfc]">
+    <div className="min-h-screen bg-[#fdfcfc] overflow-x-hidden max-w-[100vw]">
       {/* Header */}
       <header className="bg-white border-b border-[rgba(36,31,32,0.08)]">
         <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
@@ -165,9 +165,10 @@ function App() {
       </header>
 
       {/* Main */}
-      <main className="max-w-6xl mx-auto px-6 pt-0 pb-10">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="border-b border-[rgba(36,31,32,0.08)] bg-white sticky top-0 z-20 -mx-6 px-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        {/* Tab nav — sticky, full width */}
+        <div className="border-b border-[rgba(36,31,32,0.08)] bg-white sticky top-0 z-20">
+          <div className="max-w-6xl mx-auto px-6">
             <TabsList className="bg-transparent p-0 h-auto gap-0 border-0 justify-start w-full rounded-none">
               {[
                 { value: 'roadmap', label: 'Roadmap', icon: <LayoutDashboard className="h-4 w-4" /> },
@@ -194,8 +195,10 @@ function App() {
               ))}
             </TabsList>
           </div>
+        </div>
 
-          <div className="pt-6">
+        {/* Tab content */}
+        <main className="max-w-6xl mx-auto px-6 pt-6 pb-10">
             <TabsContent value="roadmap" className="mt-0">
               <ObjectivePanel
                 clientCount={clientCount}
@@ -226,9 +229,8 @@ function App() {
                 {isAdmin && <InviteUser currentUserEmail={authUser.email} />}
               </div>
             </TabsContent>
-          </div>
-        </Tabs>
-      </main>
+        </main>
+      </Tabs>
 
       <TaskDetailPanel
         task={selectedTask}
