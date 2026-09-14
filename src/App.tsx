@@ -166,7 +166,7 @@ function App() {
   const isAdmin = authUser.role === 'admin'
 
   return (
-    <div className="min-h-screen bg-[#fdfcfc] w-full">
+    <div className="min-h-screen bg-[#fdfcfc]">
       {/* Header */}
       <header className="bg-white border-b border-[rgba(36,31,32,0.08)]">
         <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">

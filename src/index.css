@@ -103,18 +103,16 @@
     @apply bg-background text-foreground font-sans antialiased;
     margin: 0;
     padding: 0 !important;
-    width: 100vw;
-    overflow-x: clip;
+    overflow: hidden auto;
   }
   html {
     @apply font-sans;
     font-size: 15px;
     letter-spacing: -0.01em;
-    overflow-x: clip;
-    width: 100vw;
+    overflow: hidden auto;
   }
   #root {
+    overflow: hidden;
     width: 100%;
-    overflow-x: clip;
   }
 }
