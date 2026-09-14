@@ -101,27 +101,20 @@
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    overflow-x: hidden !important;
     margin: 0;
-    padding: 0;
-    width: 100%;
+    padding: 0 !important;
+    width: 100vw;
+    overflow-x: clip;
   }
   html {
     @apply font-sans;
     font-size: 15px;
     letter-spacing: -0.01em;
-    overflow-x: hidden !important;
+    overflow-x: clip;
+    width: 100vw;
   }
-  html, body, #root {
-    max-width: 100vw;
-    overflow-x: hidden !important;
-  }
-  /* Prevent body padding shift from dialogs/sheets */
-  body[style*="padding-right"] {
-    padding-right: 0 !important;
-  }
-  /* Stable scrollbar to prevent layout shift */
-  html {
-    scrollbar-gutter: stable;
+  #root {
+    width: 100%;
+    overflow-x: clip;
   }
 }
