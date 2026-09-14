@@ -30,15 +30,18 @@ function App() {
     }
   }, [])
 
-  // Auto-migrate tasks: add taskType/client fields if missing
+  // Auto-migrate tasks: add taskType/client fields + Bastien tasks → ticket
   useEffect(() => {
-    const needsMigration = tasks.some((t) => !t.taskType)
+    const needsMigration = tasks.some((t) => !t.taskType || (t.assignees.includes('Bastien') && t.taskType !== 'ticket'))
     if (needsMigration) {
-      setTasks(tasks.map((t) => ({
-        ...t,
-        taskType: t.taskType || 'roadmap',
-        client: t.client || '',
-      })))
+      setTasks(tasks.map((t) => {
+        const isBastien = t.assignees.includes('Bastien')
+        return {
+          ...t,
+          taskType: isBastien ? 'ticket' : (t.taskType || 'roadmap'),
+          client: t.client || '',
+        }
+      }))
     }
   }, [])
 
