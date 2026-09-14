@@ -5,22 +5,43 @@ import { TaskTable } from '@/components/TaskTable'
 import { GanttView } from '@/components/GanttView'
 import { TeamSettings } from '@/components/TeamSettings'
 import { TaskDetailPanel } from '@/components/TaskDetailPanel'
+import { LoginPage } from '@/components/LoginPage'
+import { InviteUser } from '@/components/InviteUser'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { DEFAULT_MEMBERS, DEFAULT_TASKS, DEFAULT_OBJECTIVES } from '@/data/defaults'
 import { CrmPanel } from '@/components/CrmPanel'
-import { LayoutDashboard, ListTodo, GanttChart, Users, Briefcase } from 'lucide-react'
+import { LayoutDashboard, ListTodo, GanttChart, Users, Briefcase, LogOut } from 'lucide-react'
 import type { Task, Objective, TeamMember } from '@/types'
 import type { CrmDeal } from '@/types/crm'
 import { DEFAULT_DEALS } from '@/data/crm-defaults'
 
+interface AuthUser {
+  id: number
+  name: string
+  email: string
+  role: string
+}
+
 function App() {
+  const [authToken, setAuthToken] = useLocalStorage<string | null>('askit-auth-token', null)
+  const [authUser, setAuthUser] = useLocalStorage<AuthUser | null>('askit-auth-user', null)
+  const [authChecked, setAuthChecked] = useState(false)
+
   const [clientCount, setClientCount] = useLocalStorage('askit-clients-v1', 10)
   const [tasks, setTasks] = useLocalStorage<Task[]>('askit-tasks-v1', DEFAULT_TASKS)
   const [objectives, setObjectives] = useLocalStorage<Objective[]>('askit-objectives-v1', DEFAULT_OBJECTIVES)
   const [members, setMembers] = useLocalStorage<TeamMember[]>('askit-members-v1', DEFAULT_MEMBERS)
   const [deals, setDeals] = useLocalStorage<CrmDeal[]>('askit-deals-v1', DEFAULT_DEALS)
 
-  // Auto-sync member colors from defaults (preserves emails and other edits)
+  // Verify token on load
+  useEffect(() => {
+    if (!authToken) { setAuthChecked(true); return }
+    fetch('/api/auth/verify', { headers: { Authorization: `Bearer ${authToken}` } })
+      .then((r) => { if (!r.ok) { setAuthToken(null); setAuthUser(null) }; setAuthChecked(true) })
+      .catch(() => { setAuthToken(null); setAuthUser(null); setAuthChecked(true) })
+  }, [])
+
+  // Auto-sync member colors
   useEffect(() => {
     const colorMap: Record<string, string> = {}
     DEFAULT_MEMBERS.forEach((m) => { colorMap[m.name] = m.color })
@@ -30,25 +51,21 @@ function App() {
     }
   }, [])
 
-  // Auto-migrate tasks: add taskType/client fields + Bastien tasks → ticket
+  // Auto-migrate tasks
   useEffect(() => {
     const needsMigration = tasks.some((t) => !t.taskType || (t.assignees.includes('Bastien') && t.taskType !== 'ticket'))
     if (needsMigration) {
-      setTasks(tasks.map((t) => {
-        const isBastien = t.assignees.includes('Bastien')
-        return {
-          ...t,
-          taskType: isBastien ? 'ticket' : (t.taskType || 'roadmap'),
-          client: t.client || '',
-        }
-      }))
+      setTasks(tasks.map((t) => ({
+        ...t,
+        taskType: t.assignees.includes('Bastien') ? 'ticket' : (t.taskType || 'roadmap'),
+        client: t.client || '',
+      })))
     }
   }, [])
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
 
-  // Parse URL to auto-open a task: ?tab=tasks&task=TASK_ID
   const urlParams = new URLSearchParams(window.location.search)
   const initialTab = urlParams.get('tab') || 'roadmap'
   const [activeTab, setActiveTab] = useState(initialTab)
@@ -62,7 +79,6 @@ function App() {
         setActiveTab('tasks')
         setSelectedTask(found)
         setDetailOpen(true)
-        // Clean URL after opening
         window.history.replaceState({}, '', window.location.pathname)
       }
     }
@@ -78,6 +94,32 @@ function App() {
     setTasks(tasks.map((t) => (t.id === updated.id ? updated : t)))
     setSelectedTask(updated)
   }
+
+  function handleLogin(token: string, user: AuthUser) {
+    setAuthToken(token)
+    setAuthUser(user)
+  }
+
+  function handleLogout() {
+    setAuthToken(null)
+    setAuthUser(null)
+  }
+
+  // Show loading while checking auth
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-[#fdfcfc] flex items-center justify-center">
+        <div className="text-[#a39c95]">Chargement...</div>
+      </div>
+    )
+  }
+
+  // Show login if not authenticated
+  if (!authToken || !authUser) {
+    return <LoginPage onLogin={handleLogin} />
+  }
+
+  const isAdmin = authUser.role === 'admin'
 
   return (
     <div className="min-h-screen bg-[#fdfcfc]">
@@ -95,11 +137,18 @@ function App() {
               <p className="text-[12px] text-[#a39c95]">Suivi des objectifs et tâches de l'équipe</p>
             </div>
           </div>
-          <div className="text-right">
-            <span className="text-[11px] text-[#a39c95]">Aujourd'hui</span>
-            <p className="text-[13px] font-medium text-[#241f20]">
-              {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-            </p>
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-[13px] font-medium text-[#241f20]">{authUser.name}</p>
+              <p className="text-[11px] text-[#a39c95]">{authUser.email}</p>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="p-2 rounded-full hover:bg-[#f5f5f7] text-[#a39c95] hover:text-[#241f20] transition-colors"
+              title="Se déconnecter"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
           </div>
         </div>
         <div className="max-w-6xl mx-auto px-6">
@@ -107,10 +156,9 @@ function App() {
         </div>
       </header>
 
-      {/* Main content */}
+      {/* Main */}
       <main className="max-w-6xl mx-auto px-6 pt-0 pb-10">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          {/* Navigation tabs — prominent, full-width bar */}
           <div className="border-b border-[rgba(36,31,32,0.08)] bg-white sticky top-0 z-20 -mx-6 px-6">
             <TabsList className="bg-transparent p-0 h-auto gap-0 border-0 justify-start w-full rounded-none">
               {[
@@ -165,8 +213,9 @@ function App() {
             </TabsContent>
 
             <TabsContent value="team" className="mt-0">
-              <div className="max-w-md">
+              <div className="max-w-md space-y-6">
                 <TeamSettings members={members} onMembersChange={setMembers} />
+                {isAdmin && <InviteUser currentUserEmail={authUser.email} />}
               </div>
             </TabsContent>
           </div>
