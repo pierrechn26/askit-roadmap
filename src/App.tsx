@@ -201,7 +201,7 @@ function App() {
       </header>
 
       {/* Main */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         {/* Tab nav — sticky, full width */}
         <div className="border-b border-[rgba(36,31,32,0.08)] bg-white sticky top-0 z-20">
           <div className="max-w-6xl mx-auto px-6">
