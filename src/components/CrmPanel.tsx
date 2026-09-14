@@ -323,7 +323,7 @@ export function CrmPanel({ deals, onDealsChange }: Props) {
       </Card>
 
       {/* Pipeline Kanban */}
-      <div className="overflow-x-auto -mx-6 px-6 pb-4">
+      <div className="overflow-x-auto pb-4">
         <div className="flex gap-4" style={{ minWidth: `${CRM_STAGES.length * 240}px` }}>
           {CRM_STAGES.map((stage) => {
             const stageDeals = deals.filter((d) => d.stage === stage)

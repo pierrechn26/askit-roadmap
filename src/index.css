@@ -101,10 +101,12 @@
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    overflow-x: hidden;
   }
   html {
     @apply font-sans;
     font-size: 15px;
     letter-spacing: -0.01em;
+    overflow-x: hidden;
   }
 }
