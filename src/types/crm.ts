@@ -51,6 +51,13 @@ export interface CrmContact {
   linkedin: string
 }
 
+export interface CrmTask {
+  id: string
+  title: string
+  dueDate: string
+  done: boolean
+}
+
 export interface CrmDeal {
   id: string
   company: string
@@ -59,6 +66,7 @@ export interface CrmDeal {
   amount: number
   stage: CrmStage
   notes: CrmNote[]
+  tasks: CrmTask[]
   source: string
   createdAt: string
   closedAt: string

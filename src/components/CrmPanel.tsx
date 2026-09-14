@@ -12,10 +12,10 @@ import { Separator } from '@/components/ui/separator'
 import {
   Plus, TrendingUp, Trophy, XCircle, Clock, CalendarClock, Send,
   ChevronUp, ChevronDown, GripVertical, AlertCircle, StickyNote, X,
-  Mail, Phone, ExternalLink,
+  Mail, Phone, ExternalLink, CheckSquare, Square, Trash2,
 } from 'lucide-react'
 import { differenceInDays } from 'date-fns'
-import type { CrmDeal, CrmStage, CrmNote, CrmContact } from '@/types/crm'
+import type { CrmDeal, CrmStage, CrmNote, CrmContact, CrmTask } from '@/types/crm'
 import { CRM_STAGES, CRM_STAGE_LABELS, CRM_STAGE_COLORS } from '@/types/crm'
 import { formatDateFR, getDateUrgency, DATE_BADGE_STYLES } from '@/lib/dates'
 
@@ -55,6 +55,12 @@ export function CrmPanel({ deals, onDealsChange }: Props) {
       amount: parseFloat(form.amount) || 0,
       stage: 'a_contacter',
       notes: [],
+      tasks: form.nextAction.trim() ? [{
+        id: Date.now().toString() + '-t',
+        title: form.nextAction.trim(),
+        dueDate: form.nextActionDate,
+        done: false,
+      }] : [],
       source: form.source.trim(),
       createdAt: new Date().toISOString().slice(0, 10),
       closedAt: '',
@@ -106,12 +112,21 @@ export function CrmPanel({ deals, onDealsChange }: Props) {
       }, 0) / wonDeals.length)
     : 0
 
-  // Upcoming tasks
-  const upcomingTasks = deals
-    .filter((d) => d.nextAction && d.nextActionDate && activeStages.includes(d.stage))
-    .sort((a, b) => a.nextActionDate.localeCompare(b.nextActionDate))
-
-  const overdueTasks = upcomingTasks.filter((d) => getDateUrgency(d.nextActionDate) === 'overdue')
+  // Upcoming tasks — from deal.tasks (with fallback to nextAction)
+  const upcomingTaskItems: { deal: CrmDeal; task: CrmTask }[] = []
+  for (const d of deals) {
+    if (!activeStages.includes(d.stage)) continue
+    const tasks = d.tasks || []
+    if (tasks.length > 0) {
+      for (const t of tasks) {
+        if (!t.done && t.dueDate) upcomingTaskItems.push({ deal: d, task: t })
+      }
+    } else if (d.nextAction && d.nextActionDate) {
+      upcomingTaskItems.push({ deal: d, task: { id: 'legacy-' + d.id, title: d.nextAction, dueDate: d.nextActionDate, done: false } })
+    }
+  }
+  upcomingTaskItems.sort((a, b) => a.task.dueDate.localeCompare(b.task.dueDate))
+  const overdueTaskItems = upcomingTaskItems.filter((x) => getDateUrgency(x.task.dueDate) === 'overdue')
 
   // --- Drag & Drop ---
   function handleDragStart(dealId: string) {
@@ -285,9 +300,9 @@ export function CrmPanel({ deals, onDealsChange }: Props) {
           <div className="flex items-center gap-2">
             <CalendarClock className="h-4 w-4 text-[#241f20]" />
             <span className="text-sm font-medium text-[#241f20]">Tâches à venir</span>
-            {overdueTasks.length > 0 && (
+            {overdueTaskItems.length > 0 && (
               <Badge className="bg-red-50 text-red-600 border border-red-200 rounded-full text-[10px]">
-                {overdueTasks.length} en retard
+                {overdueTaskItems.length} en retard
               </Badge>
             )}
           </div>
@@ -295,12 +310,12 @@ export function CrmPanel({ deals, onDealsChange }: Props) {
         </button>
         {tasksExpanded && (
           <div className="px-4 pb-4 space-y-1">
-            {upcomingTasks.length === 0 && <p className="text-xs text-[#a39c95] text-center py-2">Aucune tâche à venir</p>}
-            {upcomingTasks.map((deal) => {
-              const urg = getDateUrgency(deal.nextActionDate)
+            {upcomingTaskItems.length === 0 && <p className="text-xs text-[#a39c95] text-center py-2">Aucune tâche à venir</p>}
+            {upcomingTaskItems.map(({ deal, task: t }) => {
+              const urg = getDateUrgency(t.dueDate)
               return (
                 <button
-                  key={deal.id}
+                  key={t.id}
                   onClick={() => { setDetailDeal(deal); setDetailOpen(true) }}
                   className="w-full flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-[#f5f5f7] transition-colors text-left"
                 >
@@ -310,10 +325,10 @@ export function CrmPanel({ deals, onDealsChange }: Props) {
                     {(deal.contacts || []).length > 0 && (
                       <span className="text-xs text-[#a39c95] ml-2">— {(deal.contacts || [])[0]?.name}</span>
                     )}
-                    <p className="text-xs text-[#6c6560]">{deal.nextAction}</p>
+                    <p className="text-xs text-[#6c6560]">{t.title}</p>
                   </div>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full shrink-0 ${DATE_BADGE_STYLES[urg]}`}>
-                    {formatDateFR(deal.nextActionDate)}
+                    {formatDateFR(t.dueDate)}
                   </span>
                 </button>
               )
@@ -429,6 +444,9 @@ function DealDetailSheet({ deal, open, onOpenChange, onUpdate, onDelete }: {
   const [newNote, setNewNote] = useState('')
   const [addingContact, setAddingContact] = useState(false)
   const [newContact, setNewContact] = useState({ name: '', email: '', phone: '', linkedin: '' })
+  const [addingTask, setAddingTask] = useState(false)
+  const [newTaskTitle, setNewTaskTitle] = useState('')
+  const [newTaskDate, setNewTaskDate] = useState('')
 
   if (!deal) return null
 
@@ -456,6 +474,37 @@ function DealDetailSheet({ deal, open, onOpenChange, onUpdate, onDelete }: {
 
   function removeContact(contactId: string) {
     update('contacts', (deal!.contacts || []).filter((c) => c.id !== contactId))
+  }
+
+  // --- Tasks ---
+  function getDealTasks(): CrmTask[] {
+    // Migrate old nextAction into tasks if tasks array doesn't exist yet
+    const tasks = deal!.tasks || []
+    if (tasks.length === 0 && deal!.nextAction) {
+      return [{ id: 'migrated-' + deal!.id, title: deal!.nextAction, dueDate: deal!.nextActionDate || '', done: false }]
+    }
+    return tasks
+  }
+
+  function addDealTask() {
+    if (!newTaskTitle.trim()) return
+    const t: CrmTask = { id: Date.now().toString(), title: newTaskTitle.trim(), dueDate: newTaskDate, done: false }
+    update('tasks', [...getDealTasks(), t])
+    setNewTaskTitle('')
+    setNewTaskDate('')
+    setAddingTask(false)
+  }
+
+  function toggleDealTask(taskId: string) {
+    update('tasks', getDealTasks().map((t) => t.id === taskId ? { ...t, done: !t.done } : t))
+  }
+
+  function updateDealTaskDate(taskId: string, date: string) {
+    update('tasks', getDealTasks().map((t) => t.id === taskId ? { ...t, dueDate: date } : t))
+  }
+
+  function removeDealTask(taskId: string) {
+    update('tasks', getDealTasks().filter((t) => t.id !== taskId))
   }
 
   function addNote() {
@@ -613,17 +662,62 @@ function DealDetailSheet({ deal, open, onOpenChange, onUpdate, onDelete }: {
               </div>
             </div>
 
-            {/* Next action */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-medium text-[#6c6560] uppercase tracking-wider mb-1.5 block">Prochaine action</label>
-                <Input value={deal.nextAction} onChange={(e) => update('nextAction', e.target.value)} placeholder="Relance mail..." className="rounded-xl text-sm" />
+            {/* Tasks / Actions */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-medium text-[#6c6560] uppercase tracking-wider flex items-center gap-1.5">
+                  <CheckSquare className="h-3.5 w-3.5" /> Tâches / Actions
+                </label>
+                <button onClick={() => setAddingTask(true)} className="text-xs text-[#f8571f] hover:underline flex items-center gap-0.5">
+                  <Plus className="h-3 w-3" /> Ajouter
+                </button>
               </div>
-              <div>
-                <label className="text-xs font-medium text-[#6c6560] uppercase tracking-wider mb-1.5 block">Date action</label>
-                <Input type="date" value={deal.nextActionDate} onChange={(e) => update('nextActionDate', e.target.value)} className="rounded-xl text-sm" />
+
+              <div className="space-y-1">
+                {getDealTasks().length === 0 && !addingTask && (
+                  <p className="text-xs text-[#a39c95] text-center py-2">Aucune tâche</p>
+                )}
+                {getDealTasks().map((t) => {
+                  const urg = getDateUrgency(t.dueDate, t.done)
+                  return (
+                    <div key={t.id} className={`group flex items-center gap-2 py-2 px-3 rounded-xl transition-colors ${
+                      t.done ? 'opacity-50' : urg === 'overdue' ? 'bg-red-50/50' : 'hover:bg-[#f5f5f7]'
+                    }`}>
+                      <button onClick={() => toggleDealTask(t.id)} className="shrink-0">
+                        {t.done ? <CheckSquare className="h-4 w-4 text-[#f8571f]" /> : <Square className="h-4 w-4 text-[#a39c95]" />}
+                      </button>
+                      <span className={`flex-1 text-sm ${t.done ? 'line-through text-[#a39c95]' : 'text-[#241f20]'}`}>{t.title}</span>
+                      <Input
+                        type="date"
+                        value={t.dueDate}
+                        onChange={(e) => updateDealTaskDate(t.id, e.target.value)}
+                        className={`w-[130px] h-7 rounded-lg text-[11px] shrink-0 ${
+                          urg === 'overdue' ? 'border-red-300 text-red-600' : urg === 'urgent' ? 'border-[#f8571f]/40 text-[#f8571f]' : ''
+                        }`}
+                      />
+                      <button onClick={() => removeDealTask(t.id)}
+                        className="opacity-0 group-hover:opacity-100 text-[#a39c95] hover:text-red-500 transition-all shrink-0">
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )
+                })}
+
+                {addingTask && (
+                  <div className="flex gap-2 items-center mt-1">
+                    <Input placeholder="Titre de la tâche" value={newTaskTitle} onChange={(e) => setNewTaskTitle(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && addDealTask()}
+                      className="rounded-lg text-sm h-8 flex-1" autoFocus />
+                    <Input type="date" value={newTaskDate} onChange={(e) => setNewTaskDate(e.target.value)}
+                      className="w-[130px] rounded-lg text-xs h-8" />
+                    <Button size="sm" onClick={addDealTask} className="h-8 rounded-lg bg-[#241f20] text-white text-xs">OK</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setAddingTask(false)} className="h-8 text-xs"><X className="h-3 w-3" /></Button>
+                  </div>
+                )}
               </div>
             </div>
+
+            <Separator />
 
             {/* Dates */}
             <div className="flex gap-4 text-xs text-[#a39c95]">
