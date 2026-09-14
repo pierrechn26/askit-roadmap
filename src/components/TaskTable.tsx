@@ -58,7 +58,7 @@ export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskCli
   const [filterClient, setFilterClient] = useState<string>('all')
   const [sortBy, setSortBy] = useState<SortKey>('priority')
   const [sortAsc, setSortAsc] = useState(true)
-  const [selectedAssignees, setSelectedAssignees] = useState<string[]>([members[0]?.name || ''])
+  const [selectedAssignees, setSelectedAssignees] = useState<string[]>([])
   const [selectedObjectiveIds, setSelectedObjectiveIds] = useState<string[]>([])
 
   const [newClient, setNewClient] = useState('')
@@ -105,7 +105,7 @@ export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskCli
       startDate: new Date().toISOString().slice(0, 10),
       dueDate: '', priority: 'moyenne', status: 'a_faire', category: DEFAULT_CATEGORIES[0],
     })
-    setSelectedAssignees([members[0]?.name || ''])
+    setSelectedAssignees([])
     setSelectedObjectiveIds([])
     setNewClient('')
     setDialogOpen(false)
