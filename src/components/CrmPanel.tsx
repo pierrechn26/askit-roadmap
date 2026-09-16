@@ -581,7 +581,7 @@ function DealDetailSheet({ deal, open, onOpenChange, onUpdate, onDelete }: {
           </div>
         </SheetHeader>
 
-        <ScrollArea className="flex-1">
+        <div className="flex-1 overflow-y-auto">
           <div className="px-6 py-4 space-y-5">
             {/* Contacts */}
             <div>
@@ -762,7 +762,7 @@ function DealDetailSheet({ deal, open, onOpenChange, onUpdate, onDelete }: {
               Supprimer ce deal
             </Button>
           </div>
-        </ScrollArea>
+        </div>
 
         {/* Note compose */}
         <div className="border-t border-[rgba(36,31,32,0.06)] p-4 flex gap-2">

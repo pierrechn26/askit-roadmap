@@ -237,7 +237,7 @@ export function TaskDetailPanel({ task, open, onOpenChange, onTaskUpdate, member
               </div>
             </SheetHeader>
 
-            <ScrollArea className="flex-1">
+            <div className="flex-1 overflow-y-auto">
               <div className="px-6 py-4 space-y-5">
                 {/* Description */}
                 <div>
@@ -499,7 +499,7 @@ export function TaskDetailPanel({ task, open, onOpenChange, onTaskUpdate, member
                   </div>
                 </div>
               </div>
-            </ScrollArea>
+            </div>
 
             {/* Compose bar */}
             <div className="border-t border-[rgba(36,31,32,0.06)] p-4">
