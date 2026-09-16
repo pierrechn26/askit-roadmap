@@ -16,6 +16,47 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     )
   `
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS app_tasks (
+      id TEXT PRIMARY KEY,
+      data JSONB NOT NULL,
+      updated_at TIMESTAMP DEFAULT NOW()
+    )
+  `
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS app_objectives (
+      id TEXT PRIMARY KEY,
+      data JSONB NOT NULL,
+      updated_at TIMESTAMP DEFAULT NOW()
+    )
+  `
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS app_deals (
+      id TEXT PRIMARY KEY,
+      data JSONB NOT NULL,
+      updated_at TIMESTAMP DEFAULT NOW()
+    )
+  `
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS app_members (
+      id SERIAL PRIMARY KEY,
+      name TEXT UNIQUE NOT NULL,
+      data JSONB NOT NULL,
+      updated_at TIMESTAMP DEFAULT NOW()
+    )
+  `
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key TEXT PRIMARY KEY,
+      value JSONB NOT NULL,
+      updated_at TIMESTAMP DEFAULT NOW()
+    )
+  `
+
   // Create admin if not exists
   const existing = await sql`SELECT id FROM users WHERE email = 'pierre.chenu@ask-it.ai'`
   if (existing.length === 0) {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ObjectivePanel } from '@/components/ObjectivePanel'
 import { TaskTable } from '@/components/TaskTable'
@@ -22,22 +22,142 @@ interface AuthUser {
   role: string
 }
 
+// Helper: sync full array to API (debounced via PUT with array body)
+function syncToApi(endpoint: string, data: unknown) {
+  fetch(endpoint, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  }).catch((err) => console.error(`Sync error (${endpoint}):`, err))
+}
+
 function App() {
   const [authToken, setAuthToken] = useLocalStorage<string | null>('askit-auth-token', null)
   const [authUser, setAuthUser] = useLocalStorage<AuthUser | null>('askit-auth-user', null)
   const [authChecked, setAuthChecked] = useState(false)
+  const [dataLoaded, setDataLoaded] = useState(false)
 
-  const [clientCount, setClientCount] = useLocalStorage('askit-clients-v1', 10)
-  const [tasks, setTasks] = useLocalStorage<Task[]>('askit-tasks-v1', DEFAULT_TASKS)
-  const [objectives, setObjectives] = useLocalStorage<Objective[]>('askit-objectives-v1', DEFAULT_OBJECTIVES)
-  const [members, setMembers] = useLocalStorage<TeamMember[]>('askit-members-v1', DEFAULT_MEMBERS)
-  const [deals, setDeals] = useLocalStorage<CrmDeal[]>('askit-deals-v1', DEFAULT_DEALS)
+  const [clientCount, setClientCountLocal] = useState(10)
+  const [tasks, setTasksLocal] = useState<Task[]>([])
+  const [objectives, setObjectivesLocal] = useState<Objective[]>([])
+  const [members, setMembersLocal] = useState<TeamMember[]>(DEFAULT_MEMBERS)
+  const [deals, setDealsLocal] = useState<CrmDeal[]>([])
+
+  // Debounce refs for syncing
+  const syncTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+
+  function debouncedSync(key: string, endpoint: string, data: unknown, delay = 500) {
+    if (syncTimers.current[key]) clearTimeout(syncTimers.current[key])
+    syncTimers.current[key] = setTimeout(() => syncToApi(endpoint, data), delay)
+  }
+
+  // Wrapped setters that do optimistic update + API sync
+  const setTasks = useCallback((valueOrFn: Task[] | ((prev: Task[]) => Task[])) => {
+    setTasksLocal((prev) => {
+      const next = typeof valueOrFn === 'function' ? valueOrFn(prev) : valueOrFn
+      debouncedSync('tasks', '/api/data/tasks', next)
+      return next
+    })
+  }, [])
+
+  const setObjectives = useCallback((valueOrFn: Objective[] | ((prev: Objective[]) => Objective[])) => {
+    setObjectivesLocal((prev) => {
+      const next = typeof valueOrFn === 'function' ? valueOrFn(prev) : valueOrFn
+      debouncedSync('objectives', '/api/data/objectives', next)
+      return next
+    })
+  }, [])
+
+  const setMembers = useCallback((valueOrFn: TeamMember[] | ((prev: TeamMember[]) => TeamMember[])) => {
+    setMembersLocal((prev) => {
+      const next = typeof valueOrFn === 'function' ? valueOrFn(prev) : valueOrFn
+      debouncedSync('members', '/api/data/members', next)
+      return next
+    })
+  }, [])
+
+  const setDeals = useCallback((valueOrFn: CrmDeal[] | ((prev: CrmDeal[]) => CrmDeal[])) => {
+    setDealsLocal((prev) => {
+      const next = typeof valueOrFn === 'function' ? valueOrFn(prev) : valueOrFn
+      debouncedSync('deals', '/api/data/deals', next)
+      return next
+    })
+  }, [])
+
+  const setClientCount = useCallback((value: number) => {
+    setClientCountLocal(value)
+    fetch('/api/data/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: 'clientCount', value }),
+    }).catch((err) => console.error('Settings sync error:', err))
+  }, [])
+
+  // Load all data from API on mount
+  useEffect(() => {
+    if (!authToken) return
+
+    let cancelled = false
+
+    async function loadData() {
+      try {
+        const [tasksRes, objectivesRes, dealsRes, membersRes, settingsRes] = await Promise.all([
+          fetch('/api/data/tasks').then((r) => r.json()).catch(() => ({ tasks: [] })),
+          fetch('/api/data/objectives').then((r) => r.json()).catch(() => ({ objectives: [] })),
+          fetch('/api/data/deals').then((r) => r.json()).catch(() => ({ deals: [] })),
+          fetch('/api/data/members').then((r) => r.json()).catch(() => ({ members: [] })),
+          fetch('/api/data/settings').then((r) => r.json()).catch(() => ({ settings: {} })),
+        ])
+
+        if (cancelled) return
+
+        // If DB is empty, seed with defaults and push to API
+        const dbTasks = tasksRes.tasks?.length > 0 ? tasksRes.tasks : DEFAULT_TASKS
+        const dbObjectives = objectivesRes.objectives?.length > 0 ? objectivesRes.objectives : DEFAULT_OBJECTIVES
+        const dbDeals = dealsRes.deals?.length > 0 ? dealsRes.deals : DEFAULT_DEALS
+        const dbMembers = membersRes.members?.length > 0 ? membersRes.members : DEFAULT_MEMBERS
+        const dbClientCount = settingsRes.settings?.clientCount != null ? Number(settingsRes.settings.clientCount) : 10
+
+        setTasksLocal(dbTasks)
+        setObjectivesLocal(dbObjectives)
+        setDealsLocal(dbDeals)
+        setMembersLocal(dbMembers)
+        setClientCountLocal(dbClientCount)
+
+        // If DB was empty, push defaults to API
+        if (!tasksRes.tasks?.length) syncToApi('/api/data/tasks', DEFAULT_TASKS)
+        if (!objectivesRes.objectives?.length) syncToApi('/api/data/objectives', DEFAULT_OBJECTIVES)
+        if (!dealsRes.deals?.length) syncToApi('/api/data/deals', DEFAULT_DEALS)
+        if (!membersRes.members?.length) syncToApi('/api/data/members', DEFAULT_MEMBERS)
+        if (settingsRes.settings?.clientCount == null) {
+          fetch('/api/data/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: 'clientCount', value: 10 }),
+          }).catch(() => {})
+        }
+
+        setDataLoaded(true)
+      } catch (err) {
+        console.error('Failed to load data from API, using defaults:', err)
+        if (cancelled) return
+        setTasksLocal(DEFAULT_TASKS)
+        setObjectivesLocal(DEFAULT_OBJECTIVES)
+        setDealsLocal(DEFAULT_DEALS)
+        setMembersLocal(DEFAULT_MEMBERS)
+        setClientCountLocal(10)
+        setDataLoaded(true)
+      }
+    }
+
+    loadData()
+    return () => { cancelled = true }
+  }, [authToken])
 
   // Verify token on load
   useEffect(() => {
     if (!authToken) { setAuthChecked(true); return }
     try {
-      // Verify token locally first (check expiry)
       const base64Part = authToken.split('.')[0]
       const data = JSON.parse(atob(base64Part))
       if (data.exp < Date.now()) {
@@ -51,12 +171,12 @@ function App() {
 
   // Auto-sync member colors + sync invited users into team members
   useEffect(() => {
-    // Fix colors from defaults
+    if (!dataLoaded) return
+
     const colorMap: Record<string, string> = {}
     DEFAULT_MEMBERS.forEach((m) => { colorMap[m.name] = m.color })
     let updated = members.map((m) => colorMap[m.name] ? { ...m, color: colorMap[m.name] } : m)
 
-    // Fetch registered users from DB and add missing ones to team
     fetch('/api/auth/list-users')
       .then((r) => r.json())
       .then((data) => {
@@ -75,7 +195,6 @@ function App() {
             changed = true
           }
         }
-        // Also sync emails for existing members
         for (const u of data.users) {
           const idx = updated.findIndex((m) => m.name.toLowerCase() === u.name.toLowerCase())
           if (idx >= 0 && !updated[idx].email && u.email) {
@@ -88,15 +207,15 @@ function App() {
         }
       })
       .catch(() => {
-        // Still apply color fixes even if fetch fails
         if (members.some((m) => colorMap[m.name] && m.color !== colorMap[m.name])) {
           setMembers(updated)
         }
       })
-  }, [])
+  }, [dataLoaded])
 
   // Auto-migrate tasks
   useEffect(() => {
+    if (!dataLoaded || tasks.length === 0) return
     const needsMigration = tasks.some((t) => !t.taskType || (t.assignees.includes('Bastien') && t.taskType !== 'ticket'))
     if (needsMigration) {
       setTasks(tasks.map((t) => ({
@@ -105,7 +224,7 @@ function App() {
         client: t.client || '',
       })))
     }
-  }, [])
+  }, [dataLoaded])
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
@@ -161,6 +280,15 @@ function App() {
   // Show login if not authenticated
   if (!authToken || !authUser) {
     return <LoginPage onLogin={handleLogin} />
+  }
+
+  // Show loading while fetching data from DB
+  if (!dataLoaded) {
+    return (
+      <div className="min-h-screen bg-[#fdfcfc] flex items-center justify-center">
+        <div className="text-[#a39c95]">Chargement des donnees...</div>
+      </div>
+    )
   }
 
   const isAdmin = authUser.role === 'admin'
