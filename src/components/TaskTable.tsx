@@ -50,7 +50,8 @@ const STATUS_ORDER: Record<TaskStatus, number> = {
 
 export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskClick }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [viewType, setViewType] = useState<'roadmap' | 'ticket' | 'archive'>('roadmap')
+  const [viewType, setViewType] = useState<'roadmap' | 'ticket'>('roadmap')
+  const [showArchived, setShowArchived] = useState(false)
   const [filterAssignee, setFilterAssignee] = useState<string>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterPriority, setFilterPriority] = useState<string>('all')
@@ -134,12 +135,11 @@ export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskCli
   const memberColorMap: Record<string, string> = {}
   members.forEach((m) => { memberColorMap[m.name] = m.color })
 
-  const viewTasks = viewType === 'archive'
-    ? tasks.filter((t) => t.status === 'termine')
-    : tasks.filter((t) => (t.taskType || 'roadmap') === viewType && t.status !== 'termine')
+  const activeTasks = tasks.filter((t) => (t.taskType || 'roadmap') === viewType && t.status !== 'termine')
+  const archivedTasks = tasks.filter((t) => (t.taskType || 'roadmap') === viewType && t.status === 'termine')
+  const viewTasks = showArchived ? archivedTasks : activeTasks
   const allCategories = [...new Set(viewTasks.map((t) => t.category))].sort()
   const allClients = [...new Set(tasks.filter((t) => t.client).map((t) => t.client))].sort()
-  const archivedCount = tasks.filter((t) => t.status === 'termine').length
 
   // Filter
   let filtered = viewTasks
@@ -205,21 +205,23 @@ export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskCli
               {tasks.filter((t) => t.taskType === 'ticket' && t.status !== 'termine').length}
             </span>
           </button>
-          <button
-            onClick={() => { setViewType('archive'); clearFilters() }}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              viewType === 'archive' ? 'bg-white text-[#241f20] shadow-sm' : 'text-[#a39c95] hover:text-[#241f20]'
-            }`}
-          >
-            <Archive className="h-4 w-4" /> Archives
-            <span className="text-[10px] bg-[#f5f5f7] text-[#6c6560] rounded-full px-1.5 py-0.5 ml-0.5">
-              {archivedCount}
-            </span>
-          </button>
         </div>
 
-        {viewType === 'archive' ? (
-          <p className="text-xs text-[#a39c95]">Les tâches marquées "Terminé" sont archivées ici</p>
+        {/* Archive toggle */}
+        {archivedTasks.length > 0 && (
+          <button
+            onClick={() => setShowArchived(!showArchived)}
+            className={`flex items-center gap-1.5 text-xs transition-all ${
+              showArchived ? 'text-[#241f20] font-medium' : 'text-[#a39c95] hover:text-[#6c6560]'
+            }`}
+          >
+            <Archive className="h-3.5 w-3.5" />
+            {showArchived ? 'Masquer les archives' : `Voir les archives (${archivedTasks.length})`}
+          </button>
+        )}
+
+        {showArchived ? (
+          <p className="text-xs text-[#a39c95]">Tâches terminées — cliquez sur une tâche pour la réactiver</p>
         ) : (
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
