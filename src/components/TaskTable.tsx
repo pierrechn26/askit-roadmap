@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Plus, Trash2, ArrowUpDown, MessageSquare, CheckSquare, Square, Paperclip, ChevronRight, Filter, X, LayoutList, Bug } from 'lucide-react'
+import { Plus, Trash2, ArrowUpDown, MessageSquare, CheckSquare, Square, Paperclip, ChevronRight, Filter, X, LayoutList, Bug, Archive } from 'lucide-react'
 import type { Task, Priority, TaskStatus, TeamMember, SubTask, Objective } from '@/types'
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_ORDER } from '@/types'
 import { DEFAULT_CATEGORIES } from '@/data/defaults'
@@ -50,7 +50,7 @@ const STATUS_ORDER: Record<TaskStatus, number> = {
 
 export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskClick }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [viewType, setViewType] = useState<'roadmap' | 'ticket'>('roadmap')
+  const [viewType, setViewType] = useState<'roadmap' | 'ticket' | 'archive'>('roadmap')
   const [filterAssignee, setFilterAssignee] = useState<string>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterPriority, setFilterPriority] = useState<string>('all')
@@ -134,9 +134,12 @@ export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskCli
   const memberColorMap: Record<string, string> = {}
   members.forEach((m) => { memberColorMap[m.name] = m.color })
 
-  const viewTasks = tasks.filter((t) => (t.taskType || 'roadmap') === viewType)
+  const viewTasks = viewType === 'archive'
+    ? tasks.filter((t) => t.status === 'termine')
+    : tasks.filter((t) => (t.taskType || 'roadmap') === viewType && t.status !== 'termine')
   const allCategories = [...new Set(viewTasks.map((t) => t.category))].sort()
   const allClients = [...new Set(tasks.filter((t) => t.client).map((t) => t.client))].sort()
+  const archivedCount = tasks.filter((t) => t.status === 'termine').length
 
   // Filter
   let filtered = viewTasks
@@ -188,7 +191,7 @@ export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskCli
           >
             <LayoutList className="h-4 w-4" /> Tâches Roadmap
             <span className="text-[10px] bg-[#f5f5f7] text-[#6c6560] rounded-full px-1.5 py-0.5 ml-0.5">
-              {tasks.filter((t) => (t.taskType || 'roadmap') === 'roadmap').length}
+              {tasks.filter((t) => (t.taskType || 'roadmap') === 'roadmap' && t.status !== 'termine').length}
             </span>
           </button>
           <button
@@ -199,11 +202,25 @@ export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskCli
           >
             <Bug className="h-4 w-4" /> Tickets Dev
             <span className="text-[10px] bg-[#f5f5f7] text-[#6c6560] rounded-full px-1.5 py-0.5 ml-0.5">
-              {tasks.filter((t) => t.taskType === 'ticket').length}
+              {tasks.filter((t) => t.taskType === 'ticket' && t.status !== 'termine').length}
+            </span>
+          </button>
+          <button
+            onClick={() => { setViewType('archive'); clearFilters() }}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              viewType === 'archive' ? 'bg-white text-[#241f20] shadow-sm' : 'text-[#a39c95] hover:text-[#241f20]'
+            }`}
+          >
+            <Archive className="h-4 w-4" /> Archives
+            <span className="text-[10px] bg-[#f5f5f7] text-[#6c6560] rounded-full px-1.5 py-0.5 ml-0.5">
+              {archivedCount}
             </span>
           </button>
         </div>
 
+        {viewType === 'archive' ? (
+          <p className="text-xs text-[#a39c95]">Les tâches marquées "Terminé" sont archivées ici</p>
+        ) : (
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button size="sm" className="rounded-full bg-[#f8571f] hover:bg-[#e04d1a] text-white">
@@ -289,6 +306,7 @@ export function TaskTable({ tasks, onTasksChange, members, objectives, onTaskCli
             </div>
           </DialogContent>
         </Dialog>
+        )}
 
         {/* Separator */}
         <div className="w-px h-5 bg-[#241f20]/10" />
