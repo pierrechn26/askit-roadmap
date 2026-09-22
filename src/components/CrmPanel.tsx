@@ -393,8 +393,19 @@ export function CrmPanel({ deals, onDealsChange }: Props) {
 }
 
 // ── Deal Card ──
+// Get next pending task from a deal (tasks array or legacy nextAction)
+function getNextPendingTask(deal: CrmDeal): { title: string; dueDate: string } | null {
+  const tasks = deal.tasks || []
+  const pending = tasks.filter((t) => !t.done).sort((a, b) => (a.dueDate || '9999').localeCompare(b.dueDate || '9999'))
+  if (pending.length > 0) return pending[0]
+  // Fallback to legacy nextAction only if no tasks exist
+  if (tasks.length === 0 && deal.nextAction) return { title: deal.nextAction, dueDate: deal.nextActionDate }
+  return null
+}
+
 function DealCard({ deal, onDragStart, onClick }: { deal: CrmDeal; onDragStart: (id: string) => void; onClick: () => void }) {
-  const urg = deal.nextActionDate ? getDateUrgency(deal.nextActionDate) : 'normal'
+  const nextTask = getNextPendingTask(deal)
+  const urg = nextTask?.dueDate ? getDateUrgency(nextTask.dueDate) : 'normal'
 
   return (
     <div
@@ -417,13 +428,13 @@ function DealCard({ deal, onDragStart, onClick }: { deal: CrmDeal; onDragStart: 
           {deal.amount > 0 && (
             <p className="text-sm font-bold text-[#f8571f] mt-2">{deal.amount.toLocaleString('fr-FR')} €/mois</p>
           )}
-          {deal.nextAction && (
-            <p className="text-xs text-[#a39c95] mt-1.5 truncate">{deal.nextAction}</p>
+          {nextTask && (
+            <p className="text-xs text-[#a39c95] mt-1.5 truncate">{nextTask.title}</p>
           )}
           <div className="flex items-center gap-2 mt-2 flex-wrap">
-            {deal.nextActionDate && (
+            {nextTask?.dueDate && (
               <span className={`text-[10px] px-2 py-0.5 rounded-full ${DATE_BADGE_STYLES[urg]}`}>
-                {formatDateFR(deal.nextActionDate)}
+                {formatDateFR(nextTask.dueDate)}
               </span>
             )}
             {deal.source && (
