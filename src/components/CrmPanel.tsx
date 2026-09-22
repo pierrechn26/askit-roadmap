@@ -18,6 +18,7 @@ import { differenceInDays } from 'date-fns'
 import type { CrmDeal, CrmStage, CrmNote, CrmContact, CrmTask } from '@/types/crm'
 import { CRM_STAGES, CRM_STAGE_LABELS, CRM_STAGE_COLORS } from '@/types/crm'
 import { formatDateFR, getDateUrgency, DATE_BADGE_STYLES } from '@/lib/dates'
+import { Linkify } from './Linkify'
 
 interface Props {
   deals: CrmDeal[]
@@ -758,7 +759,7 @@ function DealDetailSheet({ deal, open, onOpenChange, onUpdate, onDelete }: {
                           <X className="h-2.5 w-2.5" />
                         </button>
                       </div>
-                      <p className="text-sm bg-[#f5f5f7] rounded-xl px-3 py-1.5 text-[#241f20] whitespace-pre-wrap break-words">{note.content}</p>
+                      <p className="text-sm bg-[#f5f5f7] rounded-xl px-3 py-1.5 text-[#241f20] whitespace-pre-wrap break-words"><Linkify>{note.content}</Linkify></p>
                     </div>
                   </div>
                 ))}

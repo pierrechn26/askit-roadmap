@@ -17,6 +17,7 @@ import { STATUS_LABELS, STATUS_DOT, PRIORITY_LABELS, PRIORITY_ORDER } from '@/ty
 import { DEFAULT_CATEGORIES } from '@/data/defaults'
 import { notifyAssignment, notifyMention } from '@/lib/notifications'
 import { formatDateFR, getDateUrgency, DATE_BADGE_STYLES } from '@/lib/dates'
+import { Linkify } from './Linkify'
 import { SubtaskDetail } from './SubtaskDetail'
 import { MentionInput } from './MentionInput'
 
@@ -491,7 +492,7 @@ export function TaskDetailPanel({ task, open, onOpenChange, onTaskUpdate, member
                           }`}>
                             {activity.type === 'document' && <FileText className="h-3.5 w-3.5 inline mr-1.5 text-blue-500" />}
                             {activity.type === 'mention' && <AtSign className="h-3.5 w-3.5 inline mr-1.5 text-[#f8571f]" />}
-                            {activity.content}
+                            <Linkify>{activity.content}</Linkify>
                           </div>
                         </div>
                       </div>
