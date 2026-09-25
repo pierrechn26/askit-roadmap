@@ -38,6 +38,7 @@ function App() {
   const [dataLoaded, setDataLoaded] = useState(false)
 
   const [clientCount, setClientCountLocal] = useState(10)
+  const [arrValue, setArrValueLocal] = useState(21067)
   const [tasks, setTasksLocal] = useState<Task[]>([])
   const [objectives, setObjectivesLocal] = useState<Objective[]>([])
   const [members, setMembersLocal] = useState<TeamMember[]>(DEFAULT_MEMBERS)
@@ -93,6 +94,15 @@ function App() {
     }).catch((err) => console.error('Settings sync error:', err))
   }, [])
 
+  const setArrValue = useCallback((value: number) => {
+    setArrValueLocal(value)
+    fetch('/api/data/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: 'arrValue', value }),
+    }).catch((err) => console.error('Settings sync error:', err))
+  }, [])
+
   // Load all data from API on mount
   useEffect(() => {
     if (!authToken) return
@@ -117,12 +127,14 @@ function App() {
         const dbDeals = dealsRes.deals?.length > 0 ? dealsRes.deals : DEFAULT_DEALS
         const dbMembers = membersRes.members?.length > 0 ? membersRes.members : DEFAULT_MEMBERS
         const dbClientCount = settingsRes.settings?.clientCount != null ? Number(settingsRes.settings.clientCount) : 10
+        const dbArrValue = settingsRes.settings?.arrValue != null ? Number(settingsRes.settings.arrValue) : 21067
 
         setTasksLocal(dbTasks)
         setObjectivesLocal(dbObjectives)
         setDealsLocal(dbDeals)
         setMembersLocal(dbMembers)
         setClientCountLocal(dbClientCount)
+        setArrValueLocal(dbArrValue)
 
         // If DB was empty, push defaults to API
         if (!tasksRes.tasks?.length) syncToApi('/api/data/tasks', DEFAULT_TASKS)
@@ -367,6 +379,8 @@ function App() {
               <ObjectivePanel
                 clientCount={clientCount}
                 onClientCountChange={setClientCount}
+                arrValue={arrValue}
+                onArrChange={setArrValue}
                 objectives={objectives}
                 onObjectivesChange={setObjectives}
                 tasks={tasks}

@@ -60,6 +60,8 @@ function getWeekRangeFromDate(date: Date): string {
 interface Props {
   clientCount: number
   onClientCountChange: (n: number) => void
+  arrValue: number
+  onArrChange: (n: number) => void
   objectives: Objective[]
   onObjectivesChange: (o: Objective[]) => void
   tasks: Task[]
@@ -67,7 +69,7 @@ interface Props {
   onTaskClick: (task: Task) => void
 }
 
-export function ObjectivePanel({ clientCount, onClientCountChange, objectives, onObjectivesChange, tasks, onTasksChange, onTaskClick }: Props) {
+export function ObjectivePanel({ clientCount, onClientCountChange, arrValue, onArrChange, objectives, onObjectivesChange, tasks, onTasksChange, onTaskClick }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingObj, setEditingObj] = useState<Objective | null>(null)
   const [formTitle, setFormTitle] = useState('')
@@ -77,6 +79,7 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
   const [formPeriod, setFormPeriod] = useState('2026-10')
   const [selectedWeekDate, setSelectedWeekDate] = useState<Date | undefined>(undefined)
   const [editingCount, setEditingCount] = useState(false)
+  const [editingArr, setEditingArr] = useState(false)
 
   const target = 100
   const pct = Math.round((clientCount / target) * 100)
@@ -304,21 +307,43 @@ export function ObjectivePanel({ clientCount, onClientCountChange, objectives, o
           </div>
           <div className="space-y-4">
             <div className="flex justify-between items-end">
-              <div className="flex items-baseline gap-2">
-                {editingCount ? (
-                  <Input type="number" className="w-24 h-12 text-2xl font-bold rounded-xl" value={clientCount}
-                    onChange={(e) => onClientCountChange(parseInt(e.target.value) || 0)}
-                    onBlur={() => setEditingCount(false)}
-                    onKeyDown={(e) => e.key === 'Enter' && setEditingCount(false)} autoFocus />
-                ) : (
-                  <span className="text-6xl font-bold text-[#f8571f] cursor-pointer hover:opacity-80 transition-opacity leading-none"
-                    onClick={() => setEditingCount(true)}>{clientCount}</span>
-                )}
-                <span className="text-xl text-[#a39c95] font-light">/ {target} clients</span>
+              <div className="flex items-center gap-3">
+                <div className="flex items-baseline gap-2">
+                  {editingCount ? (
+                    <Input type="number" className="w-24 h-12 text-2xl font-bold rounded-xl" value={clientCount}
+                      onChange={(e) => onClientCountChange(parseInt(e.target.value) || 0)}
+                      onBlur={() => setEditingCount(false)}
+                      onKeyDown={(e) => e.key === 'Enter' && setEditingCount(false)} autoFocus />
+                  ) : (
+                    <span className="text-6xl font-bold text-[#f8571f] cursor-pointer hover:opacity-80 transition-opacity leading-none"
+                      onClick={() => setEditingCount(true)}>{clientCount}</span>
+                  )}
+                  <span className="text-xl text-[#a39c95] font-light">/ {target} clients</span>
+                </div>
+                <button
+                  onClick={() => onClientCountChange(clientCount + 1)}
+                  className="w-10 h-10 rounded-xl bg-[#f8571f] hover:bg-[#e04d1a] text-white text-xl font-bold flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg shadow-[#f8571f]/25"
+                  title="Ajouter un client"
+                >+</button>
               </div>
-              <div className="text-right">
-                <span className="text-3xl font-bold text-[#241f20]">{pct}%</span>
-                <p className="text-xs text-[#a39c95]">complété</p>
+              <div className="flex items-end gap-6">
+                <div className="text-right">
+                  <p className="text-[10px] text-[#a39c95] uppercase tracking-wider mb-0.5">ARR</p>
+                  {editingArr ? (
+                    <Input type="number" className="w-32 h-9 text-lg font-bold rounded-xl text-right" value={arrValue}
+                      onChange={(e) => onArrChange(parseInt(e.target.value) || 0)}
+                      onBlur={() => setEditingArr(false)}
+                      onKeyDown={(e) => e.key === 'Enter' && setEditingArr(false)} autoFocus />
+                  ) : (
+                    <span className="text-2xl font-bold text-[#241f20] cursor-pointer hover:opacity-70 transition-opacity"
+                      onClick={() => setEditingArr(true)}>{new Intl.NumberFormat('fr-FR').format(arrValue)} €</span>
+                  )}
+                  <p className="text-[10px] text-[#a39c95]">MRR : {new Intl.NumberFormat('fr-FR').format(Math.round(arrValue / 12))} €</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-3xl font-bold text-[#241f20]">{pct}%</span>
+                  <p className="text-xs text-[#a39c95]">complété</p>
+                </div>
               </div>
             </div>
             <div className="relative pt-1">
