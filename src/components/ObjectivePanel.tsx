@@ -80,6 +80,7 @@ export function ObjectivePanel({ clientCount, onClientCountChange, arrValue, onA
   const [selectedWeekDate, setSelectedWeekDate] = useState<Date | undefined>(undefined)
   const [editingCount, setEditingCount] = useState(false)
   const [editingArr, setEditingArr] = useState(false)
+  const [editingMrr, setEditingMrr] = useState(false)
 
   const target = 100
   const pct = Math.round((clientCount / target) * 100)
@@ -338,7 +339,18 @@ export function ObjectivePanel({ clientCount, onClientCountChange, arrValue, onA
                     <span className="text-2xl font-bold text-[#241f20] cursor-pointer hover:opacity-70 transition-opacity"
                       onClick={() => setEditingArr(true)}>{new Intl.NumberFormat('fr-FR').format(arrValue)} €</span>
                   )}
-                  <p className="text-[10px] text-[#a39c95]">MRR : {new Intl.NumberFormat('fr-FR').format(Math.round(arrValue / 12))} €</p>
+                  <div className="flex items-center gap-1 justify-end mt-0.5">
+                    <span className="text-[10px] text-[#a39c95]">MRR :</span>
+                    {editingMrr ? (
+                      <Input type="number" className="w-20 h-5 text-[11px] font-semibold rounded px-1 text-right" value={Math.round(arrValue / 12)}
+                        onChange={(e) => onArrChange((parseInt(e.target.value) || 0) * 12)}
+                        onBlur={() => setEditingMrr(false)}
+                        onKeyDown={(e) => e.key === 'Enter' && setEditingMrr(false)} autoFocus />
+                    ) : (
+                      <span className="text-[11px] font-semibold text-[#6c6560] cursor-pointer hover:opacity-70 transition-opacity"
+                        onClick={() => setEditingMrr(true)}>{new Intl.NumberFormat('fr-FR').format(Math.round(arrValue / 12))} €</span>
+                    )}
+                  </div>
                 </div>
                 <div className="text-right">
                   <span className="text-3xl font-bold text-[#241f20]">{pct}%</span>
